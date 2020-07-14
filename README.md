@@ -1,13 +1,13 @@
 # Docker Vackup
 
-Easily backup and restore docker volumes using either tarballs or container images
+Easily backup and restore Docker volumes using either tarballs or container images. It's designed for running from any host/container where you have the docker CLI.
+
+Note that for open files like databases, it's usually better to use their prefered backup tool to create a backup file, but if you stored that file on a Docker volume, this could still be a way you get the Docker volume into a image or tarball for moving to remote storage for safe keeping.
 
 
-export/import copies files between a host tarball and a volume. For making
-  volume backups and restores.
+`export`/`import` commands copy files between a local tarball and a volume. For making volume backups and restores.
 
-save/load copies files between an image and a volume. For when you want to use
-  image registries as a way to push/pull volume data.
+`save`/`load` commands copy files between an image and a volume. For when you want to use image registries as a way to push/pull volume data.
 
 Usage:
 
