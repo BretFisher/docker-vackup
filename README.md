@@ -1,4 +1,6 @@
-# Docker Vackup
+# Vackup: Manage Docker Volumes 
+
+Vackup: (contraction of "volume backup")
 
 Easily backup and restore Docker volumes using either tarballs or container images. It's designed for running from any host/container where you have the docker CLI.
 
