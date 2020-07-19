@@ -25,3 +25,17 @@ Usage:
 `vackup load IMAGE VOLUME`
   Copies /volume-data contents from an image to a volume
 
+## Error conditions
+
+If any of the commands fail, the script will check to see if a `VACKUP_FAILURE_SCRIPT` environment variable is set.  If so it will run it and pass the line number the error happened on and the exit code from the failed command.  Eg,
+```sh
+# /opt/bin/vackup-failed.sh
+LINE_NUMBER=$1
+EXIT_CODE=$2
+send_slack_webhook "Vackup failed on line number ${LINE_NUMBER} with exit code ${EXIT_CODE}!"
+```
+```
+export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
+./vackup export ......
+```
+
