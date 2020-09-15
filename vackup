@@ -3,6 +3,18 @@
 # Easily tar up a volume on a local (or remote) engine
 # Inspired by CLIP from Lukasz Lach
 
+set -Eeo pipefail
+
+handle_error() {
+  exit_code=$?
+  if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
+    /bin/bash "${VACKUP_FAILURE_SCRIPT}" $1 $exit_code
+  fi
+  exit $exit_code
+}
+
+trap 'handle_error $LINENO' ERR
+
 usage() {
 cat <<EOF
 
