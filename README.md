@@ -1,11 +1,10 @@
-# Vackup: Manage Docker Volumes 
+# Vackup: Manage Docker Volumes
 
 Vackup: (contraction of "volume backup")
 
 Easily backup and restore Docker volumes using either tarballs or container images. It's designed for running from any host/container where you have the docker CLI.
 
-Note that for open files like databases, it's usually better to use their prefered backup tool to create a backup file, but if you stored that file on a Docker volume, this could still be a way you get the Docker volume into a image or tarball for moving to remote storage for safe keeping.
-
+Note that for open files like databases, it's usually better to use their preferred backup tool to create a backup file, but if you stored that file on a Docker volume, this could still be a way you get the Docker volume into a image or tarball for moving to remote storage for safe keeping.
 
 `export`/`import` commands copy files between a local tarball and a volume. For making volume backups and restores.
 
@@ -25,17 +24,27 @@ Usage:
 `vackup load IMAGE VOLUME`
   Copies /volume-data contents from an image to a volume
 
+## Install
+
+Download the `vackup` file in this repo to your local machine in your shell path and make it executable.
+
+```shell
+curl -sSL https://raw.githubusercontent.com/BretFisher/docker-vackup/main/vackup > /usr/local/bin/vackup
+chmod +x /usr/local/bin/vackup
+```
+
 ## Error conditions
 
 If any of the commands fail, the script will check to see if a `VACKUP_FAILURE_SCRIPT` environment variable is set.  If so it will run it and pass the line number the error happened on and the exit code from the failed command.  Eg,
-```sh
+
+```shell
 # /opt/bin/vackup-failed.sh
 LINE_NUMBER=$1
 EXIT_CODE=$2
 send_slack_webhook "Vackup failed on line number ${LINE_NUMBER} with exit code ${EXIT_CODE}!"
 ```
-```
+
+```shell
 export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 ./vackup export ......
 ```
-
