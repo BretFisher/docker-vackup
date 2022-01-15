@@ -8,7 +8,7 @@ set -Eeo pipefail
 handle_error() {
   exit_code=$?
   if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
-    /bin/bash "${VACKUP_FAILURE_SCRIPT}" $1 $exit_code
+    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$1" $exit_code
   fi
   exit $exit_code
 }
@@ -51,94 +51,101 @@ fi
 cmd_export() {
     VOLUME_NAME="$2"
     FILE_NAME="$3"
+    
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    VOLUME_ID=$(docker volume inspect --format '{{.Name}}' "$VOLUME_NAME")
-    if [ $? != 0 ]; then
+    
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    then
         echo "Error: Volume $VOLUME_NAME does not exist"
         exit 1
     fi
+
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
 # TODO: if FILE_NAME starts with / we need to error out
 # unless we can translate full file paths
 
-    docker run --rm \
+    if ! docker run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -zcvf /vackup/"$FILE_NAME" /vackup-volume
-
-    if [ $? != 0 ]; then
+      tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
+    then
         echo "Error: Failed to start busybox backup container"
         exit 1
     fi
+
     echo "Successfully tar'ed volume $VOLUME_NAME into file $FILE_NAME"
 }
 
 cmd_import() {
     FILE_NAME="$2"
     VOLUME_NAME="$3"
+    
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    VOLUME_ID=$(docker volume inspect --format '{{.Name}}' "$VOLUME_NAME")
-    if [ $? != 0 ]; then
+    
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    then
         echo "Error: Volume $VOLUME_NAME does not exist"
-        docker volume create $VOLUME_NAME
+        docker volume create "$VOLUME_NAME"
     fi
+
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
 # TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths
+# unless we can translate full file paths    
 
-    docker run --rm \
+    if ! docker run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -xvzf /vackup/"$FILE_NAME" -C /
-
-    if [ $? != 0 ]; then
+      tar -xvzf /vackup/"$FILE_NAME" -C /; 
+    then
         echo "Error: Failed to start busybox container"
         exit 1
     fi
+
     echo "Successfully unpacked $FILE_NAME into volume $VOLUME_NAME"
 }
 
 cmd_save() {
     VOLUME_NAME="$2"
     IMAGE_NAME="$3"
+
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    VOLUME_ID=$(docker volume inspect --format '{{.Name}}' "$VOLUME_NAME")
-    if [ $? != 0 ]; then
+
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
+    then
         echo "Error: Volume $VOLUME_NAME does not exist"
         exit 1
     fi
 
-    docker run \
+    if ! docker run \
       -v "$VOLUME_NAME":/mount-volume \
       busybox \
-      cp -Rp /mount-volume/. /volume-data/
-
-    if [ $? != 0 ]; then
+      cp -Rp /mount-volume/. /volume-data/;
+    then
         echo "Error: Failed to start busybox container"
         exit 1
     fi
 
     CONTAINER_ID=$(docker ps -lq)
 
-    docker commit -m "saving volume $VOLUME_NAME to /volume-data" $CONTAINER_ID $IMAGE_NAME
+    docker commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
 
-    docker container rm $CONTAINER_ID
+    docker container rm "$CONTAINER_ID"
   
     echo "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
 }
@@ -146,31 +153,30 @@ cmd_save() {
 cmd_load() {
     IMAGE_NAME="$2"
     VOLUME_NAME="$3"
+    
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    VOLUME_ID=$(docker volume inspect --format '{{.Name}}' "$VOLUME_NAME")
-    if [ $? != 0 ]; then
-        echo "Volume $VOLUME_NAME does not exist, creating..."
-      docker volume create $VOLUME_NAME
-    fi
 
-    docker run --rm \
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
+    then
+      echo "Volume $VOLUME_NAME does not exist, creating..."
+      docker volume create "$VOLUME_NAME"
+    fi
+    
+    if ! docker run --rm \
       -v "$VOLUME_NAME":/mount-volume \
       "$IMAGE_NAME" \
-      cp -Rp /volume-data/. /mount-volume/
-
-    if [ $? != 0 ]; then
+      cp -Rp /volume-data/. /mount-volume/; 
+    then
         echo "Error: Failed to start container from $IMAGE_NAME"
         exit 1
     fi
 
     echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
 }
-
-
 
 COMMAND="$1"
 case "$COMMAND" in
@@ -181,4 +187,3 @@ case "$COMMAND" in
 esac
 
 exit 0
-
