@@ -1,4 +1,6 @@
-# Vackup: Manage Docker Volumes
+# Vackup: Backup and Restore Docker Volumes
+
+[![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
 
 Vackup: (contraction of "volume backup")
 
