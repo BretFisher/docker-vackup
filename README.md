@@ -33,6 +33,20 @@ Usage:
 `vackup load IMAGE VOLUME`
   Copies /volume-data contents from an image to a volume
 
+## Backup and restore all volumes
+
+Backup
+
+```
+for vl in $(docker volume ls | awk '{print $2 }'); do vackup export $vl ${vl}.tar.gz ; done
+```
+
+Restore
+
+```
+for fl in $(ls *.tar.gz); do vackup import $fl ${fl%%.*} ; done
+```
+
 ## Install
 
 Download the `vackup` file in this repository to your local machine in your shell path and make it executable.
