@@ -1,7 +1,6 @@
 #!/bin/bash
 # VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
 # VOLUMES=$(docker volume ls  --format '{{.Name}}')
-# Eventuell docker-compose create oder docker volume create 
 VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
 DIR=/opt/backup-volume
 cd $DIR
