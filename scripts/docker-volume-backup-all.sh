@@ -4,7 +4,7 @@
 VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
 BDIR="$PWD"
 DIR="/opt/backup-volume"
-DATE=$(date +%Y-%m-%d--%H-%S)
+DATE=$(date +%Y-%m-%d--%H-%M)
 ROTATE_DAYS=30
 cd $DIR
 # mkdir -p ./backup-${DATE} && cd $_
