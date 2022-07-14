@@ -38,9 +38,10 @@ Usage:
 Download the `vackup` file in this repository to your local machine in your shell path and make it executable.
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/BretFisher/docker-vackup/main/vackup > /usr/local/bin/vackup
+curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > /usr/local/bin/vackup
 chmod +x /usr/local/bin/vackup
 ```
+
 
 ## Error conditions
 
@@ -58,4 +59,66 @@ send_slack_webhook "Vackup failed on line number ${LINE_NUMBER} with exit code $
 ```shell
 export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 ./vackup export ......
+```
+
+# Backup all volumes.
+### 
+Backup
+```
+for vmb in $(docker volume ls  --format '{{.Name}}'); do vackup export $vmb ${vmb}.tar.gz ; done
+```
+Restore
+```
+for vmr in $(ls *.tar.gz); do vackup import $vmr ${vmr%%.*} ; done
+```
+
+### Volume Script
+Make a volume list befor
+```bash
+mkdir /opt/backup-volume/
+docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt
+```
+
+Volume Backup
+```bash
+cat << 'EOF' > /opt/docker-volume-backup-all.sh
+#!/bin/bash
+# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
+# VOLUMES=$(docker volume ls  --format '{{.Name}}')
+VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
+BDIR="$PWD"
+DIR="/opt/backup-volume"
+DATE=$(date +%Y-%m-%d--%H-%S)
+ROTATE_DAYS=30
+cd $DIR
+# mkdir -p ./backup-${DATE} && cd $_
+mkdir -p $DIR/backup-${DATE} && cd "$_"
+for VOLUME in $VOLUMES
+do
+  echo "Run backup for Docker volume $VOLUME "
+  /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
+done
+find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
+cd $BDIR
+EOF
+chmod +x /opt/docker-volume-backup-all.sh
+```
+Volume Restore
+```bash
+cat << 'EOF' > /opt/docker-volume-restore-all.sh
+#!/bin/bash
+# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
+# VOLUMES=$(docker volume ls  --format '{{.Name}}')
+# Eventuell docker-compose create oder docker volume create 
+VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
+DIR=/opt/backup-volume
+cd $DIR
+
+for VOLUME in $VOLUMES
+do
+  echo "Run restore for Docker volume $VOLUME"
+  /usr/local/bin/vackup import $VOLUME.tgz $VOLUME 
+done
+EOF
+chmod +x /opt/docker-volume-restore-all.sh
 ```
