@@ -81,44 +81,13 @@ docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt
 
 Volume Backup
 ```bash
-cat << 'EOF' > /opt/docker-volume-backup-all.sh
-#!/bin/bash
-# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
-# VOLUMES=$(docker volume ls  --format '{{.Name}}')
-VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
-BDIR="$PWD"
-DIR="/opt/backup-volume"
-DATE=$(date +%Y-%m-%d--%H-%S)
-ROTATE_DAYS=30
-cd $DIR
-# mkdir -p ./backup-${DATE} && cd $_
-mkdir -p $DIR/backup-${DATE} && cd "$_"
-for VOLUME in $VOLUMES
-do
-  echo "Run backup for Docker volume $VOLUME "
-  /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
-done
-find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
-cd $BDIR
-EOF
+curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-backup-all.sh > /opt/docker-volume-backup-all.sh
+
 chmod +x /opt/docker-volume-backup-all.sh
 ```
 Volume Restore
 ```bash
-cat << 'EOF' > /opt/docker-volume-restore-all.sh
-#!/bin/bash
-# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
-# VOLUMES=$(docker volume ls  --format '{{.Name}}')
-# Eventuell docker-compose create oder docker volume create 
-VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
-DIR=/opt/backup-volume
-cd $DIR
+curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all.sh > /opt/docker-volume-restore-all.sh
 
-for VOLUME in $VOLUMES
-do
-  echo "Run restore for Docker volume $VOLUME"
-  /usr/local/bin/vackup import $VOLUME.tgz $VOLUME 
-done
-EOF
 chmod +x /opt/docker-volume-restore-all.sh
 ```
