@@ -11,8 +11,10 @@ cd $DIR
 mkdir -p $DIR/backup-${DATE} && cd "$_"
 for VOLUME in $VOLUMES
 do
+  echo "========================================="
   echo "Run backup for Docker volume $VOLUME "
   /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
+  echo "========================================="
 done
 find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
 cd $BDIR
