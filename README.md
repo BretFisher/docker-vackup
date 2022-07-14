@@ -65,11 +65,11 @@ export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 ### 
 Backup
 ```
-for vmb in $(docker volume ls  --format '{{.Name}}'); do vackup export $vmb ${vmb}.tar.gz ; done
+for vmb in $(docker volume ls  --format '{{.Name}}'); do vackup export $vmb ${vmb}.tgz ; done
 ```
 Restore
 ```
-for vmr in $(ls *.tar.gz); do vackup import $vmr ${vmr%%.*} ; done
+for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 ```
 
 ### Volume Script
