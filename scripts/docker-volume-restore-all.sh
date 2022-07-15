@@ -11,8 +11,8 @@ usage() {
     echo " 2 = RESTORE BACKUP"
     echo " h = HELP OUTPUT"
     echo " e = exit"
-	echo "======================================"
-	echo
+    echo "======================================"
+    echo
     read -p 'Enter value: ' value;
 }
 function BAD() {
@@ -22,8 +22,7 @@ function BAD() {
 }
 function LIST_BACKUP() {
     cd $DIR
-    # ls | grep "backup-*"
-	i=1
+    i=1
     declare -A FOLDER_SELECTION
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
         echo
@@ -31,7 +30,7 @@ function LIST_BACKUP() {
         exit 1
     fi
     echo
-	echo "======================================"
+    echo "======================================"
     echo "======== ALL BACKUPS FOLDER==========="
     echo "======================================"
     for folder in $(ls -d backup-*); do
@@ -41,19 +40,19 @@ function LIST_BACKUP() {
     done
     echo "======================================"
     cd $BDIR
-	echo
+    echo
 }
 function RESTORE_BACKUP() {
     cd $DIR
-	i=1
+    i=1
     declare -A FOLDER_SELECTION
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
         echo
         echo "Location has no backups"
         usage;
     fi
-	echo
-	echo "======================================"
+    echo
+    echo "======================================"
     echo "======== ALL BACKUPS FOLDER==========="
     echo "======================================"
     for folder in $(ls -d backup-*); do
@@ -61,7 +60,7 @@ function RESTORE_BACKUP() {
         FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
     done
-	echo "======================================"
+    echo "======================================"
     echo
     input_sel=0
     while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
@@ -103,4 +102,3 @@ do
             ;;
     esac
 done
-
