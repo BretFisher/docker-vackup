@@ -75,7 +75,7 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 ### Volume Script
 Make a volume list befor
 ```bash
-mkdir -p /opt/backup-volume /opt/scripts
+mkdir -p /opt/backup-volume /opt/scripts && \
 docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 ```
 
