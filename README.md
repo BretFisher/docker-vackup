@@ -75,18 +75,23 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 ### Volume Script
 Make a volume list befor
 ```bash
-mkdir /opt/backup-volume/
-docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt
+mkdir -p /opt/backup-volume /opt/scripts
+docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 ```
 
 Volume Backup
 ```bash
-curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-backup-all.sh > /opt/docker-volume-backup-all.sh
-chmod +x /opt/docker-volume-backup-all.sh
+curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-backup-all.sh \
+> /opt/scripts/docker-volume-backup-all.sh && chmod +x /opt/scripts/docker-volume-backup-all.sh
+```
+Volume Backup and Docker stop running Containers
+```bash
+curl -sSL \
+https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-stop-and-volume-backup-all.sh \
+> /opt/scripts/docker-stop-and-volume-backup-all.sh && chmod +x /opt/scripts/docker-stop-and-volume-backup-all.sh
 ```
 Volume Restore
 ```bash
-curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all.sh > /opt/docker-volume-restore-all.sh
-chmod +x /opt/docker-volume-restore-all.sh
+curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all.sh \
+> /opt/scripts/docker-volume-restore-all.sh && chmod +x /opt/scripts/docker-volume-restore-all.sh
 ```
-
