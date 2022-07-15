@@ -5,50 +5,80 @@ VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
 BDIR="$PWD"
 DIR="/opt/backup-volume"
 usage() {
+    echo
     echo "======================================"
     echo " 1 = LIST ALL BACKUP"
     echo " 2 = RESTORE BACKUP"
     echo " h = HELP OUTPUT"
     echo " e = exit"
+	echo "======================================"
+	echo
     read -p 'Enter value: ' value;
 }
 function BAD() {
+    echo
     echo "======================================"
     read -p 'Enter value: ' value;
 }
 function LIST_BACKUP() {
     cd $DIR
-    echo "======================================"
+    # ls | grep "backup-*"
+	i=1
+    declare -A FOLDER_SELECTION
+    if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
+        echo
+        echo "Location has no backups"
+        exit 1
+    fi
+    echo
+	echo "======================================"
     echo "======== ALL BACKUPS FOLDER==========="
     echo "======================================"
-    ls | grep "backup-*"
+    for folder in $(ls -d backup-*); do
+        echo "[ ${i} ] - ${folder}"
+        FOLDER_SELECTION[${i}]="${folder}"
+        ((i++))
+    done
     echo "======================================"
     cd $BDIR
+	echo
 }
 function RESTORE_BACKUP() {
     cd $DIR
-    echo "======================================"
-    echo "======== ALL BACKUPS FOLDER==========="
-    echo "======================================"
-    ls | grep "backup-*"
-    echo "======================================"
-    read -p 'Enter the Name of the Folder: ' BACKUP_VOLUME;
-    if [ "`ls | grep $BACKUP_VOLUME`" ]; then
-        cd $BACKUP_VOLUME
-        for VOLUME in $VOLUMES
-        do
-            echo "========================================="
-            echo "Run restore for Docker volume $VOLUME"
-            /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
-            echo "========================================="
-        done
-        cd $BDIR
-    else
-        echo "Error the Name is incorrect"
+	i=1
+    declare -A FOLDER_SELECTION
+    if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
+        echo
+        echo "Location has no backups"
         usage;
     fi
+	echo
+	echo "======================================"
+    echo "======== ALL BACKUPS FOLDER==========="
+    echo "======================================"
+    for folder in $(ls -d backup-*); do
+        echo "[ ${i} ] - ${folder}"
+        FOLDER_SELECTION[${i}]="${folder}"
+        ((i++))
+    done
+	echo "======================================"
+    echo
+    input_sel=0
+    while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
+        read -p "Select a restore point: " input_sel
+    done
+    echo
+    RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
+    cd $RESTORE_POINT
+    for VOLUME in $VOLUMES
+    do
+        echo "========================================="
+        echo "Run restore for Docker volume $VOLUME"
+        /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
+        echo "========================================="
+    done
+    cd $BDIR
 }
-
 
 while [ true ];
 do
@@ -59,7 +89,7 @@ do
             ;;
         2)
             RESTORE_BACKUP
-            # break
+            break
             ;;
         h)
             usage
@@ -73,3 +103,4 @@ do
             ;;
     esac
 done
+
