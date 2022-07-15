@@ -7,10 +7,10 @@ DIR="/opt/backup-volume"
 usage() {
     echo
     echo "======================================"
-    echo " 1 = LIST ALL BACKUP"
-    echo " 2 = RESTORE BACKUP"
-    echo " h = HELP OUTPUT"
-    echo " e = exit"
+    echo " [1] - LIST ALL BACKUP"
+    echo " [2] - RESTORE BACKUP"
+    echo " [h] - HELP OUTPUT"
+    echo " [e] - exit"
     echo "======================================"
     echo
     read -p 'Enter value: ' value;
