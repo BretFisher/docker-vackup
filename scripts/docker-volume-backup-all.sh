@@ -7,7 +7,6 @@ DIR="/opt/backup-volume"
 DATE=$(date +%Y-%m-%d--%H-%M)
 ROTATE_DAYS=30
 cd $DIR
-# mkdir -p ./backup-${DATE} && cd $_
 mkdir -p $DIR/backup-${DATE} && cd "$_"
 for VOLUME in $VOLUMES
 do
