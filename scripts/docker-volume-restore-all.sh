@@ -7,10 +7,10 @@ DIR="/opt/backup-volume"
 usage() {
     echo
     echo "======================================"
-    echo " [1] - LIST ALL BACKUP"
-    echo " [2] - RESTORE BACKUP"
-    echo " [h] - HELP OUTPUT"
-    echo " [e] - exit"
+    echo "[ 1 ] - LIST ALL BACKUP"
+    echo "[ 2 ] - RESTORE BACKUP"
+    echo "[ h ] - HELP OUTPUT"
+    echo "[ e ] - exit"
     echo "======================================"
     echo
     read -p 'Enter value: ' value;
@@ -18,7 +18,7 @@ usage() {
 function BAD() {
     echo
     echo "======================================"
-    read -p 'Enter value: ' value;
+    echo "Unknown parameter"
 }
 function LIST_BACKUP() {
     cd $DIR
@@ -97,7 +97,6 @@ do
             exit 1
             ;;
         *)
-            echo "Unknown parameter"
             BAD
             ;;
     esac
