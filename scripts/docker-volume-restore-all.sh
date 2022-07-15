@@ -1,7 +1,7 @@
 #!/bin/bash
-# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/backup-volume/volume-list.txt)
+# VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt)
 # VOLUMES=$(docker volume ls  --format '{{.Name}}')
-VOLUMES=$(cat /opt/backup-volume/volume-list.txt)
+VOLUMES=$(cat /opt/scripts/docker-volume-list.txt)
 BDIR="$PWD"
 DIR="/opt/backup-volume"
 usage() {
