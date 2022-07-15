@@ -62,7 +62,7 @@ export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 ```
 
 # Backup all volumes.
-### 
+
 Backup
 ```
 for vmb in $(docker volume ls  --format '{{.Name}}'); do vackup export $vmb ${vmb}.tgz ; done
@@ -73,6 +73,9 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 ```
 
 ### Volume Script
+⚠️ Don't forget to install vbackup first ⚠️ \
+https://github.com/alcapone1933/docker-vackup#install
+
 Make a volume list befor
 ```bash
 mkdir -p /opt/backup-volume /opt/scripts && \
