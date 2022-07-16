@@ -15,6 +15,17 @@ usage() {
     echo
     read -p 'Enter value: ' value;
 }
+function countdown() {
+  secs=$1
+  shift
+  msg=$@
+  while [ $secs -gt 0 ]
+  do
+    printf "\r\033[KWaiting %.d seconds $msg" $((secs--))
+    sleep 1
+  done
+  echo
+}
 function BAD() {
     echo
     echo "======================================"
@@ -69,6 +80,7 @@ function RESTORE_BACKUP() {
     echo
     RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
     cd $RESTORE_POINT
+    countdown 10
     for VOLUME in $VOLUMES
     do
         echo "========================================="
