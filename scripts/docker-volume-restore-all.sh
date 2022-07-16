@@ -21,7 +21,7 @@ function countdown() {
   msg=$@
   while [ $secs -gt 0 ]
   do
-    printf "\r\033[KWaiting %.d seconds $msg" $((secs--))
+    printf "\r\033[KWaiting %.d seconds or Cancel ctrl+c $msg" $((secs--))
     sleep 1
   done
   echo
