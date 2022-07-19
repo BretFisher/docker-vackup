@@ -10,7 +10,7 @@ if [ -f "$VOLUMES" ]; then
     if [ -s $VOLUMES ]; then
         echo > /dev/null
 	else
-	    echo 
+        echo 
         echo " BACKUP VOLUMES File is empty "
         echo " Create a File of your DOCKER VOLUMES"
         echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
@@ -49,4 +49,3 @@ do
 done
 find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
 cd $BDIR
-
