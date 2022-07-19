@@ -49,6 +49,7 @@ usage() {
     echo "======================================"
     echo "[ 1 ] - LIST ALL BACKUP"
     echo "[ 2 ] - RESTORE BACKUP"
+    # echo "[ 3 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
     echo "[ h ] - HELP OUTPUT"
     echo "[ e ] - exit"
     echo "======================================"
@@ -132,13 +133,20 @@ function RESTORE_BACKUP() {
         return 1
     fi
     countdown 10
+    volume_restor_log_file="$DIR/volume_restore_log_file.log"
+    echo "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
     do
         echo "========================================="
-        echo "Run restore for Docker volume $VOLUME"
+        echo " Run restore for Docker volume $VOLUME"
         /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
+        echo " RESTORE The VOLUME ==> $VOLUME <== in the LIST " >> $volume_restor_log_file
         echo "========================================="
     done
+    echo
+    cat $volume_restor_log_file
+    echo
+    [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
     exit 1
 }
@@ -164,4 +172,3 @@ do
             ;;
     esac
 done
-
