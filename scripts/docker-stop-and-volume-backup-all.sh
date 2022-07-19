@@ -32,25 +32,25 @@ fi
 cd $DIR
 for CONTAINER in $CONTAINERS
 do
-  echo "========================================="
-  echo "docker stop $CONTAINER"
-  docker stop $CONTAINER
-  echo "========================================="
+    echo "========================================="
+    echo "docker stop $CONTAINER"
+    docker stop $CONTAINER
+    echo "========================================="
 done
 mkdir -p $DIR/backup-${DATE} && cd "$_"
 for VOLUME in $(cat $VOLUMES)
 do
-  echo "========================================="
-  echo "Run backup for Docker volume $VOLUME "
-  /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
-  echo "========================================="
+    echo "========================================="
+    echo "Run backup for Docker volume $VOLUME "
+    /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
+    echo "========================================="
 done
 for CONTAINER in $CONTAINERS
 do
-  echo "========================================="
-  echo "docker start $CONTAINER"
-  docker start $CONTAINER
-  echo "========================================="
+   echo "========================================="
+   echo "docker start $CONTAINER"
+   docker start $CONTAINER
+   echo "========================================="
 done
 find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
 cd $BDIR
