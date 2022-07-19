@@ -8,24 +8,34 @@ DIR="/opt/backup-volume"
 DATE=$(date +%Y-%m-%d--%H-%M)
 ROTATE_DAYS=30
 if [ -f "$VOLUMES" ]; then
-    echo  
+    if [ -s $VOLUMES ]; then
+        echo > /dev/null
+    else
+        echo 
+        echo " BACKUP VOLUMES File is empty "
+        echo " Create a File of your DOCKER VOLUMES"
+        echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+        echo
+        exit 1
+    fi  
 else
     echo 
     echo " VOLUMES File does not exist . "
     echo " Create a File of your DOCKER VOLUMES "
-    echo " ==> docker volume ls  --format '{{.Name}}' > $VOLUMES <== "
-    echo " OR Change the variable VOLUMES= "
+    echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+    echo " OR Change the Variable VOLUMES= "
     echo
     exit 1
 fi
+
 if [ -d "$DIR" ]; then
-    echo
+    echo > /dev/null
 else
     echo 
     echo " BACKUP Directory does not exist."
     echo " Create a BACKUP Directory or change the variable DIR= "
     echo " ==> mkdir -p $DIR <== "
-    echo " Or Change the variable DIR= " 
+    echo " OR Change the Variable DIR= " 
     echo
     exit 1
 fi
