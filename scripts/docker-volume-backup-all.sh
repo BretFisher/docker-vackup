@@ -6,7 +6,7 @@ BDIR="$PWD"
 DIR="/opt/backup-volume"
 DATE=$(date +%Y-%m-%d--%H-%M)
 ROTATE_DAYS=30
-if [ -f "/usr/local/bin/vackupf" ]; then
+if [ -f "/usr/local/bin/vackup" ]; then
     echo > /dev/null
 else
     echo
