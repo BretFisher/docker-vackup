@@ -1,9 +1,49 @@
 #!/bin/bash
 # VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt)
 # VOLUMES=$(docker volume ls  --format '{{.Name}}')
-VOLUMES=$(cat /opt/scripts/docker-volume-list.txt)
+VOLUMES="/opt/scripts/docker-volume-list.txt"
 BDIR="$PWD"
 DIR="/opt/backup-volume"
+if [ -f "/usr/local/bin/vackup" ]; then
+    echo > /dev/null
+else
+    echo
+    echo " vackup not installed"
+    echo " curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > /usr/local/bin/vackup && chmod +x /usr/local/bin/vackup"
+    exit 1
+fi 
+if [ -f "$VOLUMES" ]; then
+    if [ -s $VOLUMES ]; then
+        echo > /dev/null
+    else
+        echo 
+        echo " BACKUP VOLUMES File is empty "
+        echo " Create a File of your DOCKER VOLUMES"
+        echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+        echo
+        exit 1
+    fi  
+else
+    echo 
+    echo " VOLUMES File does not exist . "
+    echo " Create a File of your DOCKER VOLUMES "
+    echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+    echo " OR Change the Variable VOLUMES= "
+    echo
+    exit 1
+fi
+
+if [ -d "$DIR" ]; then
+    echo > /dev/null
+else
+    echo 
+    echo " BACKUP Directory does not exist."
+    echo " Create a BACKUP Directory or change the variable DIR= "
+    echo " ==> mkdir -p $DIR <== "
+    echo " OR Change the Variable DIR= " 
+    echo
+    exit 1
+fi
 usage() {
     echo
     echo "======================================"
@@ -30,6 +70,8 @@ function BAD() {
     echo
     echo "======================================"
     echo "Unknown parameter"
+    sleep 2
+    return 1	
 }
 function LIST_BACKUP() {
     cd $DIR
@@ -38,11 +80,12 @@ function LIST_BACKUP() {
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
         echo
         echo "Location has no backups"
-        exit 1
+        sleep 1
+        return 1
     fi
     echo
     echo "======================================"
-    echo "======== ALL BACKUPS FOLDER==========="
+    echo "======== ALL BACKUPS FOLDER =========="
     echo "======================================"
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
@@ -52,6 +95,7 @@ function LIST_BACKUP() {
     echo "======================================"
     cd $BDIR
     echo
+    sleep 1
 }
 function RESTORE_BACKUP() {
     cd $DIR
@@ -60,11 +104,12 @@ function RESTORE_BACKUP() {
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
         echo
         echo "Location has no backups"
-        usage;
+        sleep 1
+        return 1
     fi
     echo
     echo "======================================"
-    echo "======== ALL BACKUPS FOLDER==========="
+    echo "======== ALL BACKUPS FOLDER =========="
     echo "======================================"
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
@@ -80,8 +125,14 @@ function RESTORE_BACKUP() {
     echo
     RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
     cd $RESTORE_POINT
+    if [ "$(find * -name "*.tgz" 2>/dev/null)" ]; then
+        echo > /dev/null
+    else
+        echo "Not .tgz found"
+        return 1
+    fi
     countdown 10
-    for VOLUME in $VOLUMES
+    for VOLUME in $(cat $VOLUMES)
     do
         echo "========================================="
         echo "Run restore for Docker volume $VOLUME"
@@ -89,6 +140,7 @@ function RESTORE_BACKUP() {
         echo "========================================="
     done
     cd $BDIR
+    exit 1
 }
 
 while [ true ];
@@ -100,7 +152,6 @@ do
             ;;
         2)
             RESTORE_BACKUP
-            break
             ;;
         h)
             usage
@@ -113,3 +164,4 @@ do
             ;;
     esac
 done
+
