@@ -22,7 +22,7 @@ if [ -f "$VOLUMES" ]; then
         echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
         echo
         exit 1
-    fi  
+    fi
 else
     echo 
     echo " VOLUMES File does not exist . "
@@ -49,12 +49,20 @@ usage() {
     echo "======================================"
     echo "[ 1 ] - LIST ALL BACKUP"
     echo "[ 2 ] - RESTORE BACKUP"
-    # echo "[ 3 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
+    echo "[ 3 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
+    echo "[ l ] - VOLUME LIST FILE"	
     echo "[ h ] - HELP OUTPUT"
     echo "[ e ] - exit"
     echo "======================================"
     echo
     read -p 'Enter value: ' value;
+}
+function BAD() {
+    echo
+    echo "======================================"
+    echo "Unknown parameter"
+    sleep 2
+    return 1	
 }
 function countdown() {
   secs=$1
@@ -67,12 +75,20 @@ function countdown() {
   done
   echo
 }
-function BAD() {
-    echo
-    echo "======================================"
-    echo "Unknown parameter"
-    sleep 2
-    return 1	
+function VOLUME_LIST() {
+    if [ -s $VOLUMES ]; then
+        echo "========================================="
+        echo "============ VOLUME LIST ================"
+        cat $VOLUMES
+        echo -e "\\n========================================="
+        sleep 2
+        return 0
+    else
+        echo 
+        echo " VOLUMES File is empty "
+        sleep 2
+        return 1
+    fi
 }
 function LIST_BACKUP() {
     cd $DIR
@@ -150,7 +166,44 @@ function RESTORE_BACKUP() {
     cd $BDIR
     exit 1
 }
-
+function DELETE_BEFOR_RESTORE() {
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
+    VOLUME_LIST	
+    sleep 1
+    if ! $1 ; 
+    then
+        return 1
+    fi
+    countdown 10
+    for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop $CONTAINER"; done
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo "docker stop $CONTAINER"
+        docker stop $CONTAINER
+        echo "========================================="
+    done
+    for VOLUME in $(cat $VOLUMES)
+    do
+        if ! docker volume inspect --format '{{.Name}}' "$VOLUME"; then
+            echo " Error: Volume $VOLUME does not exist"
+            echo " Docker create Volume $VOLUME "
+            docker volume create "$VOLUME"
+        fi
+        if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+            echo " Error: Failed to start busybox container"
+        else
+            echo "Successfully deleite $VOLUME"
+        fi
+    done
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo "docker start $CONTAINER"
+        docker start $CONTAINER
+        echo "========================================="
+    done
+}
 while [ true ];
 do
 	usage;
@@ -161,8 +214,14 @@ do
         2)
             RESTORE_BACKUP
             ;;
+        3)
+            DELETE_BEFOR_RESTORE
+            ;;
         h)
             usage
+            ;;
+        l)
+            VOLUME_LIST
             ;;
         e)
             exit 1
