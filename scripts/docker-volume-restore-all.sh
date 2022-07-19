@@ -49,7 +49,7 @@ usage() {
     echo "======================================"
     echo "[ 1 ] - LIST ALL BACKUP"
     echo "[ 2 ] - RESTORE BACKUP"
-    echo "[ 3 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
+    # echo "[ 3 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
     echo "[ l ] - VOLUME LIST FILE"	
     echo "[ h ] - HELP OUTPUT"
     echo "[ e ] - exit"
@@ -116,6 +116,7 @@ function LIST_BACKUP() {
 }
 function RESTORE_BACKUP() {
     cd $DIR
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)    
     i=1
     declare -A FOLDER_SELECTION
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
@@ -149,6 +150,7 @@ function RESTORE_BACKUP() {
         return 1
     fi
     countdown 10
+    DELETE_BEFOR_RESTORE
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
@@ -160,15 +162,23 @@ function RESTORE_BACKUP() {
         echo "========================================="
     done
     echo
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo " docker start $CONTAINER"
+        docker start $CONTAINER
+        echo "========================================="
+    done
     cat $volume_restor_log_file
     echo
+    
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
     exit 1
 }
 function DELETE_BEFOR_RESTORE() {
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
-    VOLUME_LIST	
+    # VOLUME_LIST	
     sleep 1
     if ! $1 ; 
     then
@@ -196,13 +206,6 @@ function DELETE_BEFOR_RESTORE() {
             echo "Successfully deleite $VOLUME"
         fi
     done
-    for CONTAINER in $CONTAINERS
-    do
-        echo "========================================="
-        echo "docker start $CONTAINER"
-        docker start $CONTAINER
-        echo "========================================="
-    done
 }
 while [ true ];
 do
@@ -214,9 +217,9 @@ do
         2)
             RESTORE_BACKUP
             ;;
-        3)
-            DELETE_BEFOR_RESTORE
-            ;;
+        # 3)
+            # DELETE_BEFOR_RESTORE
+            # ;;
         h)
             usage
             ;;
