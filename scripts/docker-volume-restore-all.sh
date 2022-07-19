@@ -180,10 +180,10 @@ function DELETE_BEFOR_RESTORE() {
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
     # VOLUME_LIST	
     sleep 1
-    if ! $1 ; 
-    then
-        return 1
-    fi
+    # if ! $1 ; 
+    # then
+        # return 1
+    # fi
     countdown 10
     for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop $CONTAINER"; done
     for CONTAINER in $CONTAINERS
