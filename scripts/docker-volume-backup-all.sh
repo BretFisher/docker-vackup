@@ -34,7 +34,6 @@ else
     echo
     exit 1
 fi
-
 if [ -d "$DIR" ]; then
     echo > /dev/null
 else
@@ -52,13 +51,13 @@ echo "" > $volume_log_file
 mkdir -p $DIR/backup-${DATE} && cd "$_"
 for VOLUME in $(cat $VOLUMES)
 do
-    DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep $VOLUME)
+    DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep ${VOLUME}$)
     if [[ "$VOLUME" = "$DOCKER_VOLUME" ]]; then
         echo "========================================="
         echo " Run backup for Docker volume $VOLUME "
         echo " BACKED UP The VOLUME     ==> $VOLUME <== in the LIST " >> $volume_log_file
         /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
-        echo "========================================="		
+        echo "========================================="
     else
         echo " NOT BACKED UP the VOLUME ==> $VOLUME <== in the LIST " >> $volume_log_file
     fi
