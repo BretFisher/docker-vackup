@@ -124,21 +124,75 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 > /opt/scripts/docker-volume-restore-all.sh && chmod +x /opt/scripts/docker-volume-restore-all.sh
 ```
 
+<details>
+<summary markdown="span">Usage</summary>
+
 ### Usage
 ```txt
-$ /opt/scripts/docker-volume-restore-all.sh
+$ root@docker:/opt/scripts# ./docker-volume-restore-all.sh
 
-======================================
+=========================================
 [ 1 ] - BACKUP VOLUMES
 [ 2 ] - LIST ALL VOLUMES BACKUP
 [ 3 ] - RESTORE VOLUMES BACKUP
 [ 4 ] - VOLUME LIST FILE
 [ h ] - HELP OUTPUT
 [ e ] - exit
-======================================
+=========================================
 
-Enter value:
+Enter value: 2
+
+=========================================
+=========== ALL BACKUPS FOLDER ==========
+=========================================
+[ 1 ] - backup-2022-07-18--23-16
+[ 2 ] - backup-2022-07-19--15-53
+[ 3 ] - backup-2022-07-23--07-14
+[ 4 ] - backup-2022-07-23--07-22
+[ 5 ] - backup-2022-07-23--08-40
+[ 6 ] - backup-2022-07-23--08-42
+[ 7 ] - backup-2022-07-23--08-49
+=========================================
+
+
+=========================================
+[ 1 ] - BACKUP VOLUMES
+[ 2 ] - LIST ALL VOLUMES BACKUP
+[ 3 ] - RESTORE VOLUMES BACKUP
+[ 4 ] - VOLUME LIST FILE
+[ h ] - HELP OUTPUT
+[ e ] - exit
+=========================================
+
+Enter value: 4
+
+=========================================
+=============== VOLUME LIST =============
+=========================================
+pg-data
+static-files
+=========================================
+
+=========================================
+[ 1 ] - BACKUP VOLUMES
+[ 2 ] - LIST ALL VOLUMES BACKUP
+[ 3 ] - RESTORE VOLUMES BACKUP
+[ 4 ] - VOLUME LIST FILE
+[ h ] - HELP OUTPUT
+[ e ] - exit
+=========================================
+
+Enter value: 5
+
+=========================================
+=========== Unknown parameter ===========
+=========================================
+
+$ root@docker:/opt/scripts#
+
 ```
+</details>
+
 </details>
 
 &nbsp;
