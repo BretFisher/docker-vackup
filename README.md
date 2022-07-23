@@ -123,6 +123,22 @@ https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/dock
 curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all.sh \
 > /opt/scripts/docker-volume-restore-all.sh && chmod +x /opt/scripts/docker-volume-restore-all.sh
 ```
+
+### Usage
+```txt
+$ /opt/scripts/docker-volume-restore-all.sh
+
+======================================
+[ 1 ] - BACKUP VOLUMES
+[ 2 ] - LIST ALL VOLUMES BACKUP
+[ 3 ] - RESTORE VOLUMES BACKUP
+[ 4 ] - VOLUME LIST FILE
+[ h ] - HELP OUTPUT
+[ e ] - exit
+======================================
+
+Enter value:
+```
 </details>
 
 &nbsp;
