@@ -62,7 +62,9 @@ usage() {
 function BAD() {
     echo
     echo "======================================"
-    echo "Unknown parameter"
+    echo "========== Unknown parameter ========="
+    echo "======================================"
+    echo
     sleep 2
     return 1
 }
@@ -285,6 +287,7 @@ do
             ;;
         *)
             BAD
+            break
             ;;
     esac
 done
