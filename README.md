@@ -64,7 +64,7 @@ export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 # Backup all volumes.
 [⚠️ Don't forget to install vbackup first ⚠️](#Install)
 
-https://github.com/alcapone1933/docker-vackup#instal
+https://github.com/alcapone1933/docker-vackup#Install
 
 
 Backup
