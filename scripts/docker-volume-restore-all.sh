@@ -81,6 +81,7 @@ function countdown() {
 }
 function BACKUP_VOLUMES() {
     countdown 5
+    echo
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
     for CONTAINER in $CONTAINERS
     do
@@ -124,11 +125,13 @@ function BACKUP_VOLUMES() {
     LIST_BACKUP
 }
 function VOLUME_LIST() {
+    echo
     if [ -s $VOLUMES ]; then
         echo "========================================="
         echo "============ VOLUME LIST ================"
-        cat $VOLUMES
-        echo -e "\\n========================================="
+        echo "========================================="
+        echo "`cat ${VOLUMES}`"
+        echo "========================================="
         sleep 2
         return 0
     else
