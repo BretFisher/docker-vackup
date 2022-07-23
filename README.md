@@ -63,7 +63,6 @@ export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 
 # Backup all volumes.
 [⚠️ Don't forget to install vbackup first ⚠️](#Install)
-
 https://github.com/alcapone1933/docker-vackup#Install
 
 
@@ -76,7 +75,16 @@ Restore
 for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 ```
 
-## Volume Script
+&nbsp;
+
+# Volume Backup Script and Restore Menu
+
+<details>
+<summary markdown="span">Volume Backup Script and Restore Menu</summary>
+
+&nbsp;
+
+## Volume List 
 
 Make a volume list befor
 ```bash
@@ -84,19 +92,37 @@ mkdir -p /opt/backup-volume /opt/scripts && \
 docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 ```
 
-Volume Backup
+Or Change the Variable in the Script
+```txt
+VOLUMES="/opt/scripts/docker-volume-list.txt"
+DIR="/opt/backup-volume"
+```
+
+&nbsp;
+
+##  Volume Backup  Only
 ```bash
 curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-backup-all.sh \
 > /opt/scripts/docker-volume-backup-all.sh && chmod +x /opt/scripts/docker-volume-backup-all.sh
 ```
-Volume Backup and Docker stop running Containers
+
+&nbsp;
+
+## Volume Backup and Docker stop running Containers
+
 ```bash
 curl -sSL \
 https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-stop-and-volume-backup-all.sh \
 > /opt/scripts/docker-stop-and-volume-backup-all.sh && chmod +x /opt/scripts/docker-stop-and-volume-backup-all.sh
 ```
-Volume Restore
+
+&nbsp;
+
+## Volume Restore Menu
 ```bash
 curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all.sh \
 > /opt/scripts/docker-volume-restore-all.sh && chmod +x /opt/scripts/docker-volume-restore-all.sh
 ```
+</details>
+
+&nbsp;
