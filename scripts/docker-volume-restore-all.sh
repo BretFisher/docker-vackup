@@ -47,7 +47,7 @@ else
 fi
 usage() {
     echo
-    echo "======================================"
+    echo "========================================="
     echo "[ 1 ] - BACKUP VOLUMES"
     echo "[ 2 ] - LIST ALL VOLUMES BACKUP"
     echo "[ 3 ] - RESTORE VOLUMES BACKUP"
@@ -55,15 +55,16 @@ usage() {
     # echo "[ 5 ] - DELETE THE CONTENTS OF THE VOLUMES BEFORE RESTORING "
     echo "[ h ] - HELP OUTPUT"
     echo "[ e ] - exit"
-    echo "======================================"
+    echo "========================================="
     echo
     read -n 1 -t 60 -p 'Enter value: ' value;
+    echo
 }
 function BAD() {
     echo
-    echo "======================================"
-    echo "========== Unknown parameter ========="
-    echo "======================================"
+    echo "========================================="
+    echo "=========== Unknown parameter ==========="
+    echo "========================================="
     echo
     sleep 2
     return 1
@@ -128,7 +129,7 @@ function VOLUME_LIST() {
     echo
     if [ -s $VOLUMES ]; then
         echo "========================================="
-        echo "============ VOLUME LIST ================"
+        echo "=============== VOLUME LIST ============="
         echo "========================================="
         echo "`cat ${VOLUMES}`"
         echo "========================================="
@@ -152,15 +153,15 @@ function LIST_BACKUP() {
         return 1
     fi
     echo
-    echo "======================================"
-    echo "======== ALL BACKUPS FOLDER =========="
-    echo "======================================"
+    echo "========================================="
+    echo "=========== ALL BACKUPS FOLDER =========="
+    echo "========================================="
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
         FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
     done
-    echo "======================================"
+    echo "========================================="
     cd $BDIR
     echo
     sleep 1
@@ -178,15 +179,15 @@ function RESTORE_BACKUP() {
         return 1
     fi
     echo
-    echo "======================================"
-    echo "======== ALL BACKUPS FOLDER =========="
-    echo "======================================"
+    echo "========================================="
+    echo "=========== ALL BACKUPS FOLDER =========="
+    echo "========================================="
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
         FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
     done
-    echo "======================================"
+    echo "========================================="
     echo
     input_sel=0
     while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
@@ -281,9 +282,6 @@ do
             # ;;
         h)
             usage
-            ;;
-        l)
-            VOLUME_LIST
             ;;
         e)
             exit 1
