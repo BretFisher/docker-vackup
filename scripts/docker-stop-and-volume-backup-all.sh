@@ -35,7 +35,6 @@ else
     echo
     exit 1
 fi
-
 if [ -d "$DIR" ]; then
     echo > /dev/null
 else
@@ -60,7 +59,7 @@ echo "" > $volume_log_file
 mkdir -p $DIR/backup-${DATE} && cd "$_"
 for VOLUME in $(cat $VOLUMES)
 do
-    DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep $VOLUME)
+    DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep ${VOLUME}$)
     if [[ "$VOLUME" = "$DOCKER_VOLUME" ]]; then
         echo "========================================="
         echo " Run backup for Docker volume $VOLUME "
@@ -73,10 +72,10 @@ do
 done
 for CONTAINER in $CONTAINERS
 do
-   echo "========================================="
-   echo "docker start $CONTAINER"
-   docker start $CONTAINER
-   echo "========================================="
+    echo "========================================="
+    echo "docker start $CONTAINER"
+    docker start $CONTAINER
+    echo "========================================="
 done
 echo
 cat $volume_log_file
@@ -86,4 +85,3 @@ echo
 find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
 echo
 cd $BDIR
-
