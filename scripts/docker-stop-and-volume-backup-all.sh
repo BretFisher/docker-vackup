@@ -6,7 +6,7 @@ CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
 BDIR="$PWD"
 DIR="/opt/backup-volume"
 DATE=$(date +%Y-%m-%d--%H-%M)
-ROTATE_DAYS=30
+ROTATE_DAYS="30"
 if [ -f "/usr/local/bin/vackup" ]; then
     echo > /dev/null
 else
@@ -82,6 +82,6 @@ cat $volume_log_file
 echo
 [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
 echo
-find $DIR/backup-* -mtime +$ROTATE_DAYS -exec rm -rvf {} \;
+find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} \;
 echo
 cd $BDIR
