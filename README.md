@@ -63,6 +63,7 @@ export VACKUP_FAILURE_SCRIPT=/opt/bin/vackup-failed.sh
 
 # Backup all volumes.
 [⚠️ Don't forget to install vbackup first ⚠️](#Install)
+
 https://github.com/alcapone1933/docker-vackup#Install
 
 
@@ -77,7 +78,7 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 
 &nbsp;
 
-# Volume Backup Script and Restore Menu
+# Volume Backup Script from the a list and Restore Menu
 
 <details>
 <summary markdown="span">Volume Backup Script and Restore Menu</summary>
@@ -92,7 +93,7 @@ mkdir -p /opt/backup-volume /opt/scripts && \
 docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 ```
 
-Or Change the Variable in the Script
+Or Cchange the Variable in the Script it if you want something else
 ```txt
 VOLUMES="/opt/scripts/docker-volume-list.txt"
 DIR="/opt/backup-volume"
@@ -100,7 +101,7 @@ DIR="/opt/backup-volume"
 
 &nbsp;
 
-##  Volume Backup  Only
+##  Volume Backup single from the list
 ```bash
 curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-backup-all.sh \
 > /opt/scripts/docker-volume-backup-all.sh && chmod +x /opt/scripts/docker-volume-backup-all.sh
@@ -108,12 +109,30 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 
 &nbsp;
 
-## Volume Backup and Docker stop running Containers
+## Volume Backup single from the list and Stop running Docker Container
 
 ```bash
 curl -sSL \
 https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-stop-and-volume-backup-all.sh \
 > /opt/scripts/docker-stop-and-volume-backup-all.sh && chmod +x /opt/scripts/docker-stop-and-volume-backup-all.sh
+```
+
+### FOR Crontab 
+The Default ROTATE DAYS is 30 Days for delete the old Backups
+
+Or Cchange the Variable in the Script it if you want something else
+```txt
+ROTATE_DAYS="30"
+```
+[Crontab Generator](https://crontab.guru/)
+```txt
+# Daily   AT 04:00 24H
+00 04 * * * /opt/scripts/docker-stop-and-volume-backup-all.sh
+# Weekly  AT 05:00 24H ON Monday
+00 05 * * 1 /opt/scripts/docker-stop-and-volume-backup-all.sh
+# Monthly AT 06:00 24H ON the first DAY on the Month.
+00 06 1 * * /opt/scripts/docker-stop-and-volume-backup-all.sh
+
 ```
 
 &nbsp;
