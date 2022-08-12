@@ -206,13 +206,30 @@ function RESTORE_BACKUP() {
     DELETE_BEFOR_RESTORE
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
+#    for VOLUME in $(cat $VOLUMES)
+#    do
+#        echo "========================================="
+#        echo " Run restore for Docker volume $VOLUME"
+#        /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
+#        echo " RESTORE The VOLUME ==> $VOLUME <== in the LIST " >> $volume_restor_log_file
+#        echo "========================================="
+#    done
     for VOLUME in $(cat $VOLUMES)
-    do
-        echo "========================================="
-        echo " Run restore for Docker volume $VOLUME"
-        /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
-        echo " RESTORE The VOLUME ==> $VOLUME <== in the LIST " >> $volume_restor_log_file
-        echo "========================================="
+    do  
+        VOLUMES_TGZ=$(find * -name "${VOLUME}.tgz" 2>/dev/null)
+        if [[ ${VOLUME}.tgz = $VOLUMES_TGZ ]]; then
+            echo "========================================="
+            echo " Run restore for Docker volume $VOLUME"
+            /usr/local/bin/vackup import $VOLUME.tgz $VOLUME
+            echo " RESTORE The VOLUME ==> $VOLUME <== in the LIST " >> $volume_restor_log_file
+            echo "========================================="
+        else
+            echo "========================================="
+            echo " NOT FIND TGZ IN THE FOLDER FROM $VOLUME "
+            echo " NOT FIND TGZ IN THE FOLDER FROM VOLUME ==> $VOLUME <== " >> $volume_restor_log_file
+            echo " NOT RESTORE THE VOLUME ==================> $VOLUME <== in the LIST " >> $volume_restor_log_file
+            echo "========================================="
+        fi
     done
     echo
     for CONTAINER in $CONTAINERS
