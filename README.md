@@ -2,6 +2,8 @@
 
 [![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
 
+**This is now an [Official Docker Desktop Extension called "Volumes Backup & Share"](https://hub.docker.com/extensions/docker/volumes-backup-extension) which has more features, but I'll keep this repo around for historial purposes.**
+
 Vackup: (contraction of "volume backup")
 
 Easily backup and restore Docker volumes using either tarballs or container images.
