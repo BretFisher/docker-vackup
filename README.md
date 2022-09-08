@@ -1,7 +1,5 @@
 # Vackup: Backup and Restore Docker Volumes
 
-[![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
-
 Vackup: (contraction of "volume backup")
 
 Easily backup and restore Docker volumes using either tarballs or container images.
