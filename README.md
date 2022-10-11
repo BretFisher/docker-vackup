@@ -67,7 +67,7 @@ https://github.com/alcapone1933/docker-vackup#Install
 
 Backup
 ```
-for vmb in $(docker volume ls  --format '{{.Name}}'); do vackup export $vmb ${vmb}.tgz ; done
+for vmb in $(docker volume ls --format '{{.Name}}'); do vackup export $vmb ${vmb}.tgz ; done
 ```
 Restore
 ```
@@ -88,7 +88,7 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 Make a volume list befor
 ```bash
 mkdir -p /opt/backup-volume /opt/scripts && \
-docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
+docker volume ls --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 ```
 
 Or Cchange the Variable in the Script it if you want something else
