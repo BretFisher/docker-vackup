@@ -103,7 +103,7 @@ for ((i = 0 ; i <= 100 ; i+=5)); do
     sleep 0.2
     echo $i
 done
-} | whiptail --gauge "COUNTDOWN" 6 50 0
+} | whiptail --title "COUNTDOWN" --gauge "=============== COUNTDOWN ===============" 7 45 0
 }
 function BACKUP_VOLUMES() {
     # countdown 5
@@ -204,7 +204,7 @@ function LIST_BACKUP() {
     echo
     LIST_BACKUP=$(
     echo "========================================="
-    echo "=========== ALL BACKUPS FOLDER =========="
+    echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
@@ -233,7 +233,7 @@ function RESTORE_BACKUP() {
     fi
     LIST_BACKUPS_FOLDER=$(
     echo "========================================="
-    echo "=========== ALL BACKUPS FOLDER =========="
+    echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
@@ -247,10 +247,18 @@ function RESTORE_BACKUP() {
     done
     input_sel=0
     while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
-        # read -p "Select a restore point: " input_sel
         input_sel=$(whiptail --title "ALL BACKUPS FOLDER" --inputbox "$LIST_BACKUPS_FOLDER" 40 45 3>&1 1>&2 2>&3)
-        # read -p " Select a SSH HOST: " input_sel
+        echo
         echo "$input_sel"
+        if [ -z "$input_sel" ]; then
+            return 1
+        else
+            echo "$input_sel"
+        fi
+        # LIST_BACKUPS=$(TERM=ansi whiptail --title "ALL BACKUPS FOLDER" --infobox "$LIST_BACKUPS_FOLDER  Select a restore point: " 50 45)
+        # echo "$LIST_BACKUPS"
+        # read -p " Select a restore point: " input_sel
+        # echo "$input_sel"
     done
     echo
     RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
@@ -265,7 +273,18 @@ function RESTORE_BACKUP() {
     fi
     # countdown 10
     countdown5
-    DELETE_BEFOR_RESTORE
+    if whiptail --yesno "Do you want ALL DOCKER Volume delete befor RESTORE" 10 45; then
+        DELETE_BEFOR_RESTORE
+    else
+        for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
+        for CONTAINER in $CONTAINERS
+        do
+            echo "========================================="
+            echo " docker stop ${CONTAINER}"
+            docker stop ${CONTAINER}
+            echo "========================================="
+        done
+    fi
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
@@ -297,11 +316,10 @@ function RESTORE_BACKUP() {
     # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
     sleep 3
     whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 100
-    clear
     echo
-    
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
+    clear
     exit 1
 }
 function DELETE_BEFOR_RESTORE() {
@@ -333,7 +351,7 @@ function DELETE_BEFOR_RESTORE() {
         if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
             echo " Error: Failed to start busybox container"
         else
-            echo "Successfully deleite $VOLUME"
+            echo "Successfully delete $VOLUME"
         fi
     done
 }
