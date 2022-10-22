@@ -266,7 +266,7 @@ function RESTORE_BACKUP() {
     if [ "$(find $RESTORE_POINT -name "*.tgz" 2>/dev/null)" ]; then
         echo > /dev/null
     else
-        TERM=ansi whiptail --title "WRONG INPUT" --infobox "============= Not .tgz found ==============" 11 45
+        TERM=ansi whiptail --title "NO TAR GZ FOUND" --infobox "============= Not .tgz found ============" 11 45
         sleep 3
         clear
         return 1
