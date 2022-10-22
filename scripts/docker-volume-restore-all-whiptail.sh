@@ -322,7 +322,7 @@ function RESTORE_BACKUP() {
     i=1
     declare -A FOLDER_SELECTION
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
-        TERM=ansi whiptail --title "Location has no Backups" --infobox "======== Location has no Backups=========" 11 45
+        TERM=ansi whiptail --title "Location has no Backups" --infobox "======== Location has no Backups ========" 11 45
         sleep 3
         clear
         return 0
