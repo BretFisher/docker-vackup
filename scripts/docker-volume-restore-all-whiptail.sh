@@ -250,7 +250,7 @@ function VOLUME_LIST() {
         )
         TERM=ansi whiptail --title " VOLUMES File is EMPTY" --infobox "VOLUME_LIST_EMPTY" 11 45
         sleep 5
-        return 1
+        return 0
     fi
 }
 function LIST_BACKUP() {
@@ -268,7 +268,7 @@ function LIST_BACKUP() {
         TERM=ansi whiptail --title "Location has no backups" --infobox "$LIST_BACKUP_EMPTY" 11 45
         sleep 3
         clear
-        return 1
+        return 0
     fi
     echo
     LIST_BACKUP=$(
@@ -300,7 +300,7 @@ function LIST_BACKUP_TREE() {
         TERM=ansi whiptail --title "Location has no backups" --infobox "$LIST_BACKUP_EMPTY" 11 45
         sleep 3
         clear
-        return 1
+        return 0
     fi
     echo
     LIST_BACKUP=$(
@@ -325,7 +325,7 @@ function RESTORE_BACKUP() {
         TERM=ansi whiptail --title "Location has no Backups" --infobox "======== Location has no Backups=========" 11 45
         sleep 3
         clear
-        return 1
+        return 0
     fi
     LIST_BACKUPS_FOLDER=$(
     echo "========================================="
@@ -347,7 +347,7 @@ function RESTORE_BACKUP() {
         echo
         echo "$input_sel"
         if [ -z "$input_sel" ]; then
-            return 1
+            return 0
         else
             echo "$input_sel"
         fi
@@ -365,7 +365,7 @@ function RESTORE_BACKUP() {
         TERM=ansi whiptail --title "NO TAR GZ FOUND" --infobox "============= Not .tgz found ============" 11 45
         sleep 3
         clear
-        return 1
+        return 0
     fi
     countdown5
     countdown 5
