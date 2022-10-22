@@ -8,11 +8,16 @@ VOLUMES="$SCRIPT_DIR/docker-volume-list.txt"
 VACKUP="/usr/local/bin/vackup"
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 ROTATE_DAYS="30"
-export VACKUP_FAILURE_SCRIPT=$SCRIPT_DIR/vackup-failed.sh
 set -o errexit
 set -o errtrace
 set -o nounset
 set -Eeo pipefail
+if [ -d "$SCRIPT_DIR" ]; then
+    echo > /dev/null
+else
+    mkdir -p $SCRIPT_DIR
+fi
+export VACKUP_FAILURE_SCRIPT=$SCRIPT_DIR/vackup-failed.sh
 handle_error() {
   exit_code=$?
   if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
