@@ -86,19 +86,28 @@ echo "========================================="
     clear
     return 1
 }
-function countdown() {
-    secs=$1
-    shift
-    msg=$@
-    while [ $secs -gt 0 ]
-    do
-        printf "\r\033[KWaiting %.d seconds or Cancel ctrl+c $msg" $((secs--))
-        sleep 1
-    done
-    echo
+#function countdown() {
+#    secs=$1
+#    shift
+#    msg=$@
+#    while [ $secs -gt 0 ]
+#    do
+#        printf "\r\033[KWaiting %.d seconds or Cancel ctrl+c $msg" $((secs--))
+#        sleep 1
+#    done
+#    echo
+#}
+function countdown5() {
+{
+for ((i = 0 ; i <= 100 ; i+=5)); do
+    sleep 0.2
+    echo $i
+done
+} | whiptail --gauge "COUNTDOWN" 6 50 0
 }
 function BACKUP_VOLUMES() {
-    countdown 5
+    # countdown 5
+    countdown5
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     echo
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
@@ -135,11 +144,11 @@ function BACKUP_VOLUMES() {
        echo "========================================="
     done
     echo
-    VOLUME_LOG=$(cat $volume_log_file)
-    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_LOG" 40 100
+    VOLUME_BACKUP_LOG=$(cat $volume_log_file)
+    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 100
     sleep 3
-    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_LOG" 40 100
-    clear 
+    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 100
+    clear
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
@@ -210,42 +219,52 @@ function LIST_BACKUP() {
     # sleep 1
 }
 function RESTORE_BACKUP() {
-    countdown 5
+    # countdown 5
+    countdown5
     cd $DIR
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
     i=1
     declare -A FOLDER_SELECTION
     if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
-        echo
-        echo "Location has no backups"
-        sleep 1
+        TERM=ansi whiptail --title "Location has no Backups" --infobox "======== Location has no Backups=========" 11 45
+        sleep 3
+        clear
         return 1
     fi
-    echo
+    LIST_BACKUPS_FOLDER=$(
     echo "========================================="
     echo "=========== ALL BACKUPS FOLDER =========="
     echo "========================================="
     for folder in $(ls -d backup-*); do
         echo "[ ${i} ] - ${folder}"
-        FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
     done
     echo "========================================="
-    echo
+    )
+    for folder in $(ls -d backup-*); do
+        FOLDER_SELECTION[${i}]="${folder}"
+        ((i++))
+    done
     input_sel=0
     while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
-        read -p "Select a restore point: " input_sel
+        # read -p "Select a restore point: " input_sel
+        input_sel=$(whiptail --title "ALL BACKUPS FOLDER" --inputbox "$LIST_BACKUPS_FOLDER" 40 45 3>&1 1>&2 2>&3)
+        # read -p " Select a SSH HOST: " input_sel
+        echo "$input_sel"
     done
     echo
     RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
     cd $RESTORE_POINT
-    if [ "$(find * -name "*.tgz" 2>/dev/null)" ]; then
+    if [ "$(find $RESTORE_POINT -name "*.tgz" 2>/dev/null)" ]; then
         echo > /dev/null
     else
-        echo "Not .tgz found"
+        TERM=ansi whiptail --title "WRONG INPUT" --infobox "============= Not .tgz found ==============" 11 45
+        sleep 3
+        clear
         return 1
     fi
-    countdown 10
+    # countdown 10
+    countdown5
     DELETE_BEFOR_RESTORE
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
@@ -274,7 +293,11 @@ function RESTORE_BACKUP() {
         docker start ${CONTAINER}
         echo "========================================="
     done
-    cat $volume_restor_log_file
+    VOLUME_RESTORE_LOG=$(cat $volume_restor_log_file)
+    # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
+    sleep 3
+    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 100
+    clear
     echo
     
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
@@ -290,7 +313,8 @@ function DELETE_BEFOR_RESTORE() {
         # return 1
     # fi
     echo " VOLUMES BEFORE RESTORE DELETE"
-    countdown 10
+    # countdown 10
+    countdown5
     for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
     for CONTAINER in $CONTAINERS
     do
