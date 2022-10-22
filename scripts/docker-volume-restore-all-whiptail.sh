@@ -21,6 +21,16 @@ handle_error() {
   exit $exit_code
 }
 trap 'handle_error $LINENO' ERR
+if [ -f "$SCRIPT_DIR/vackup-failed.sh" ]; then
+    echo > /dev/null
+else
+echo '#!/bin/bash
+# /opt/bin/vackup-failed.sh
+LINE_NUMBER=$1
+EXIT_CODE=$2
+echo "Vackup failed on line number ${LINE_NUMBER} with exit code ${EXIT_CODE}!" >> $SCRIPT_DIR/vackup-error.log' > $SCRIPT_DIR/vackup-failed.sh
+sudo chmod +x $SCRIPT_DIR/vackup-failed.sh
+fi
 if [ -f "/usr/bin/whiptail" ]; then
     echo > /dev/null
 else
@@ -77,7 +87,7 @@ else
     echo
     echo "Do you want to Install"
     )
-    if whiptail --title "VACKUP NOT INSTALL" --yesno "$VBACKUP_NOT" 20 110; then
+    if whiptail --title "VACKUP NOT INSTALL" --yesno "$VBACKUP_NOT" 20 100; then
         sudo curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > $VACKUP && chmod +x $VACKUP
         sleep 0.5
     else
@@ -95,7 +105,7 @@ else
     echo
     echo "Do you want create Directory $DIR "
     )
-    if whiptail --title "VACKUP NOT INSTALL" --yesno "$DIR_PATH" 20 110; then
+    if whiptail --title "VACKUP NOT INSTALL" --yesno "$DIR_PATH" 20 100; then
         sleep 0.5
         mkdir -p $DIR
         sleep 0.5
@@ -114,7 +124,7 @@ else
     echo "Do you want to create Directory $SCRIPT_DIR and the"
     echo "File $VOLUMES and save present volumes in  the FILE"
     )
-    if whiptail --title "BACKUP VOLUMES File is EMTY" --yesno "$BACKUP_VOLUMES_FILE" 20 110; then
+    if whiptail --title "BACKUP VOLUMES File is EMTY" --yesno "$BACKUP_VOLUMES_FILE" 20 100; then
         sleep 0.5
         mkdir -p $SCRIPT_DIR && touch $VOLUMES
         docker volume ls --format '{{.Name}}' > $VOLUMES
@@ -226,7 +236,7 @@ function VOLUME_LIST() {
         echo "`cat ${VOLUMES}`"
         echo "========================================="
         )
-        # TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 100
+        # TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 45
         whiptail --title "VOLUME LIST" --scrolltext --msgbox "$VOLUME_LIST_FILE" 40 45
         # sleep 3
         return 0
@@ -276,6 +286,33 @@ function LIST_BACKUP() {
     cd $BDIR
     echo
     # sleep 1
+}
+function LIST_BACKUP_TREE() {
+    cd $DIR
+    if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
+        echo
+        # echo "Location has no backups"
+        LIST_BACKUP_EMPTY=$(
+        echo "========================================="
+        echo "======== Location has no backups ========"
+        echo "========================================="
+        )
+        TERM=ansi whiptail --title "Location has no backups" --infobox "$LIST_BACKUP_EMPTY" 11 45
+        sleep 3
+        clear
+        return 1
+    fi
+    echo
+    LIST_BACKUP=$(
+    echo "========================================="
+    echo "========== ALL BACKUPS FOLDER ==========="
+    echo "========================================="
+    tree -a $DIR
+    echo "========================================="
+    )
+    whiptail --title "ALL BACKUPS FOLDER" --scrolltext --msgbox "$LIST_BACKUP" 40 100
+    cd $BDIR
+    echo
 }
 function RESTORE_BACKUP() {
     # countdown 5
@@ -447,7 +484,7 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
             BACKUP_VOLUMES
             ;;
         "[ 2 ]")
-            LIST_BACKUP
+            LIST_BACKUP_TREE
             ;;
         "[ 3 ]")
             RESTORE_BACKUP
@@ -463,6 +500,7 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
             ;;
         "[ e ]")
             EXIT
+            clear
             exit 1
             ;;
         *)
