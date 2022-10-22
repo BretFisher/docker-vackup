@@ -8,6 +8,66 @@ VOLUMES="$SCRIPT_DIR/docker-volume-list.txt"
 VACKUP="/usr/local/bin/vackup"
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 ROTATE_DAYS="30"
+export VACKUP_FAILURE_SCRIPT=$SCRIPT_DIR/vackup-failed.sh
+set -o errexit
+set -o errtrace
+set -o nounset
+set -Eeo pipefail
+handle_error() {
+  exit_code=$?
+  if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
+    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$1" $exit_code
+  fi
+  exit $exit_code
+}
+trap 'handle_error $LINENO' ERR
+if [ -f "/usr/bin/whiptail" ]; then
+    echo > /dev/null
+else
+    echo
+    echo " Whiptail not installed"
+    echo " Install Whiptail"
+    echo " ==> sudo apt update && sudo apt install whiptail <== "
+    echo
+    echo
+    echo " DO you want to install Whiptail for Debian / Mint / Ubuntu"
+    echo "========================================="
+    echo "[ Y ] - INSTALL WHIPTAIL"
+    echo "[ N ] - EXIT"
+    echo "========================================="
+    echo
+    read -n 1 -t 60 -p 'Enter your answer value: ' value_whiptail;
+    if [[ "$value_whiptail" =~ (y|Y) ]]; then
+        sudo apt update && apt install whiptail -yq
+    else
+        echo
+        exit 1
+    fi
+fi
+if [ -f "/usr/bin/tree" ]; then
+    echo > /dev/null
+else
+    echo
+    echo " Tree not installed"
+    echo " Install Tree"
+    echo " ==> sudo apt update && sudo apt install tree <== "
+    echo
+    echo
+    echo " DO you want to install Tree for Debian / Mint / Ubuntu"
+    echo "========================================="
+    echo "[ Y ] - INSTALL TREE"
+    echo "[ N ] - EXIT"
+    echo "========================================="
+    echo
+    read -n 1 -t 60 -p 'Enter your answer value: ' value_tree;
+    echo
+    if [[ "$value_tree" =~ (y|Y) ]]; then
+        sudo apt update && apt install tree -yq
+    else
+        echo
+        exit 1
+    fi
+fi 
 if [ -f "$VACKUP" ]; then
     echo > /dev/null
 else
@@ -80,23 +140,23 @@ echo "========================================="
 echo "================= EXIT =================="
 echo "========================================="
 )
-    # whiptail --msgbox "$BAD" 11 45
+    # whiptail --msgbox "$EXIT" 11 45
     TERM=ansi whiptail --title "EXIT" --infobox "$EXIT" 11 45
     sleep 2
     clear
     return 1
 }
-#function countdown() {
-#    secs=$1
-#    shift
-#    msg=$@
-#    while [ $secs -gt 0 ]
-#    do
-#        printf "\r\033[KWaiting %.d seconds or Cancel ctrl+c $msg" $((secs--))
-#        sleep 1
-#    done
-#    echo
-#}
+function countdown() {
+    secs=$1
+    shift
+    msg=$@
+    while [ $secs -gt 0 ]
+    do
+        printf "\r\033[KWaiting %.d seconds or Cancel ctrl+c $msg" $((secs--))
+        sleep 1
+    done
+    echo
+}
 function countdown5() {
 {
 for ((i = 0 ; i <= 100 ; i+=5)); do
@@ -106,8 +166,8 @@ done
 } | whiptail --title "COUNTDOWN" --gauge "=============== COUNTDOWN ===============" 7 45 0
 }
 function BACKUP_VOLUMES() {
-    # countdown 5
     countdown5
+    countdown 5
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     echo
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
@@ -134,7 +194,6 @@ function BACKUP_VOLUMES() {
         else
             echo " NOT BACKED UP the VOLUME ==> $VOLUME <== in the LIST " >> $volume_log_file
         fi
-        
     done
     for CONTAINER in $CONTAINERS
     do
@@ -271,8 +330,8 @@ function RESTORE_BACKUP() {
         clear
         return 1
     fi
-    # countdown 10
     countdown5
+    countdown 5
     if whiptail --yesno "Do you want ALL DOCKER Volume delete befor RESTORE" 10 45; then
         DELETE_BEFOR_RESTORE
     else
@@ -288,7 +347,7 @@ function RESTORE_BACKUP() {
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
-    do  
+    do
         VOLUMES_TGZ=$(find * -name "${VOLUME}.tgz" 2>/dev/null)
         if [[ ${VOLUME}.tgz = $VOLUMES_TGZ ]]; then
             echo "========================================="
