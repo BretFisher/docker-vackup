@@ -12,30 +12,6 @@ set -o errexit
 set -o errtrace
 set -o nounset
 set -Eeo pipefail
-if [ -d "$SCRIPT_DIR" ]; then
-    echo > /dev/null
-else
-    mkdir -p $SCRIPT_DIR
-fi
-export VACKUP_FAILURE_SCRIPT=$SCRIPT_DIR/vackup-failed.sh
-handle_error() {
-  exit_code=$?
-  if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
-    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$1" $exit_code
-  fi
-  exit $exit_code
-}
-trap 'handle_error $LINENO' ERR
-if [ -f "$SCRIPT_DIR/vackup-failed.sh" ]; then
-    echo > /dev/null
-else
-echo '#!/bin/bash
-# /opt/bin/vackup-failed.sh
-LINE_NUMBER=$1
-EXIT_CODE=$2
-echo "Vackup failed on line number ${LINE_NUMBER} with exit code ${EXIT_CODE}!" >> $SCRIPT_DIR/vackup-error.log' > $SCRIPT_DIR/vackup-failed.sh
-sudo chmod +x $SCRIPT_DIR/vackup-failed.sh
-fi
 if [ -f "/usr/bin/whiptail" ]; then
     echo > /dev/null
 else
