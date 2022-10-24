@@ -213,11 +213,13 @@ $ root@docker:/opt/scripts#
 </details>
 
 ## Volume Restore Menu with whiptail
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/scripts/docker-volume-restore-all-whiptail.sh \
 > /opt/scripts/docker-volume-restore-all-whiptail.sh && chmod +x /opt/scripts/docker-volume-restore-all-whiptail.sh
 ```
 
+![DEMO gif](/demo/demo.gif)
 
 </details>
 
