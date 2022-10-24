@@ -244,7 +244,6 @@ function RESTORE_BACKUP() {
     
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
-    exit 1
 }
 function DELETE_BEFOR_RESTORE() {
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
