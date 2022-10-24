@@ -144,9 +144,8 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 
 The script is written to erase the contents of the volume before restoring it
 <details>
-<summary markdown="span">Usage</summary>
+<summary markdown="span">Usage DEMO</summary>
 
-### Usage
 ```txt
 $ root@docker:/opt/scripts# ./docker-volume-restore-all.sh
 
@@ -212,6 +211,10 @@ $ root@docker:/opt/scripts#
 ```
 </details>
 
+&nbsp;
+
+![DEMO GIF](/demo/demo-1.gif)
+
 ## Volume Restore Menu with Whiptail
 
 ```bash
@@ -219,9 +222,9 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 > /opt/scripts/docker-volume-restore-all-whiptail.sh && chmod +x /opt/scripts/docker-volume-restore-all-whiptail.sh
 ```
 
-### DEMO
+### Usage DEMO
 
-![DEMO GIF](/demo/demo.gif)
+![DEMO GIF](/demo/demo-2.gif)
 
 </details>
 
