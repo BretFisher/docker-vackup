@@ -157,7 +157,7 @@ done
 } | whiptail --title "COUNTDOWN" --gauge "=============== COUNTDOWN ===============" 7 45 0
 }
 function BACKUP_VOLUMES() {
-    countdown5
+    # countdown5
     countdown 5
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     echo
@@ -169,6 +169,7 @@ function BACKUP_VOLUMES() {
         docker stop ${CONTAINER}
         echo "========================================="
     done
+    echo 
     cd $DIR
     volume_log_file="$DIR/volume_log_file.log"
     echo "" > $volume_log_file
@@ -193,10 +194,8 @@ function BACKUP_VOLUMES() {
        docker start ${CONTAINER}
        echo "========================================="
     done
-    echo
     VOLUME_BACKUP_LOG=$(cat $volume_log_file)
     # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 100
-    sleep 3
     whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 100
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
@@ -256,7 +255,7 @@ function LIST_BACKUP() {
     echo "========================================="
     echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
-    for folder in $(ls -d backup-*); do
+    for folder in $(ls -td backup-*); do
         echo "[ ${i} ] - ${folder}"
         FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
@@ -288,7 +287,7 @@ function LIST_BACKUP_TREE() {
     echo "========================================="
     echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
-    tree -a $DIR
+    tree -ar $DIR
     echo "========================================="
     )
     whiptail --title "ALL BACKUPS FOLDER" --scrolltext --msgbox "$LIST_BACKUP" 40 100
@@ -297,7 +296,7 @@ function LIST_BACKUP_TREE() {
 }
 function RESTORE_BACKUP() {
     # countdown 5
-    countdown5
+    # countdown5
     cd $DIR
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
     i=1
@@ -312,13 +311,13 @@ function RESTORE_BACKUP() {
     echo "========================================="
     echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
-    for folder in $(ls -d backup-*); do
+    for folder in $(ls -td backup-*); do
         echo "[ ${i} ] - ${folder}"
         ((i++))
     done
     echo "========================================="
     )
-    for folder in $(ls -d backup-*); do
+    for folder in $(ls -td backup-*); do
         FOLDER_SELECTION[${i}]="${folder}"
         ((i++))
     done
@@ -326,11 +325,11 @@ function RESTORE_BACKUP() {
     while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
         input_sel=$(whiptail --title "ALL BACKUPS FOLDER" --inputbox "$LIST_BACKUPS_FOLDER" 40 45 3>&1 1>&2 2>&3)
         echo
-        echo "$input_sel"
+        # echo "$input_sel"
         if [ -z "$input_sel" ]; then
             return 0
         else
-            echo "$input_sel"
+            echo
         fi
         # LIST_BACKUPS=$(TERM=ansi whiptail --title "ALL BACKUPS FOLDER" --infobox "$LIST_BACKUPS_FOLDER  Select a restore point: " 50 45)
         # echo "$LIST_BACKUPS"
@@ -348,8 +347,8 @@ function RESTORE_BACKUP() {
         clear
         return 0
     fi
-    countdown5
-    countdown 5
+    # countdown5
+    # countdown 5
     if whiptail --yesno "Do you want ALL DOCKER Volume delete befor RESTORE" 10 45; then
         DELETE_BEFOR_RESTORE
     else
@@ -389,6 +388,7 @@ function RESTORE_BACKUP() {
         docker start ${CONTAINER}
         echo "========================================="
     done
+    clear
     VOLUME_RESTORE_LOG=$(cat $volume_restor_log_file)
     # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
     sleep 3
@@ -408,7 +408,6 @@ function DELETE_BEFOR_RESTORE() {
     # fi
     echo " VOLUMES BEFORE RESTORE DELETE"
     # countdown 10
-    countdown5
     for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
     for CONTAINER in $CONTAINERS
     do
