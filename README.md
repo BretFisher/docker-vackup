@@ -77,8 +77,6 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 
 # Volume Backup Script from the a list and Restore Menu
 
-<details>
-<summary markdown="span">Volume Backup Script and Restore Menu</summary>
 
 &nbsp;
 
@@ -225,7 +223,5 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 ### Usage DEMO
 
 ![DEMO GIF](/demo/demo-2.gif)
-
-</details>
 
 &nbsp;
