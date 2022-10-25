@@ -20,7 +20,6 @@ else
     echo " Install Whiptail"
     echo " ==> sudo apt update && sudo apt install whiptail <== "
     echo
-    echo
     echo " DO you want to install Whiptail for Debian / Mint / Ubuntu"
     echo "========================================="
     echo "[ Y ] - INSTALL WHIPTAIL"
