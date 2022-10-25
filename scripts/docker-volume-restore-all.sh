@@ -104,7 +104,7 @@ function BACKUP_VOLUMES() {
     done
     cd $DIR
     volume_log_file="$DIR/volume_log_file.log"
-    echo "" > $volume_log_file
+    cat /dev/null > $volume_log_file
     mkdir -p $DIR/backup-${DATE} && cd "$_"
     for VOLUME in $(cat $VOLUMES)
     do
@@ -230,7 +230,7 @@ function RESTORE_BACKUP() {
         echo > /dev/null
     fi
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
-    echo "" > $volume_restor_log_file
+    cat /dev/null > $volume_restor_log_file
 #    for VOLUME in $(cat $VOLUMES)
 #    do
 #        echo "========================================="
