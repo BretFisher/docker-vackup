@@ -1,17 +1,19 @@
 #!/bin/bash
 # VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt)
 # VOLUMES=$(docker volume ls  --format '{{.Name}}')
-VOLUMES="/opt/scripts/docker-volume-list.txt"
 BDIR="$PWD"
 DIR="/opt/backup-volume"
-DATE=$(date +%Y-%m-%d--%H-%M)
+SCRIPT_DIR="/opt/scripts"
+VOLUMES="$SCRIPT_DIR/docker-volume-list.txt"
+VACKUP="/usr/local/bin/vackup"
+DATE=$(date +%Y-%m-%d--%H-%M-%S)
 ROTATE_DAYS="30"
-if [ -f "/usr/local/bin/vackup" ]; then
+if [ -f "$VACKUP" ]; then
     echo > /dev/null
 else
     echo
     echo " vackup not installed"
-    echo " curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > /usr/local/bin/vackup && chmod +x /usr/local/bin/vackup"
+    echo " curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > $VACKUP && chmod +x $VACKUP"
     exit 1
 fi 
 if [ -f "$VOLUMES" ]; then
@@ -56,7 +58,7 @@ do
         echo "========================================="
         echo " Run backup for Docker volume $VOLUME "
         echo " BACKED UP The VOLUME     ==> $VOLUME <== in the LIST " >> $volume_log_file
-        /usr/local/bin/vackup export $VOLUME $VOLUME.tgz
+        $VACKUP export $VOLUME $VOLUME.tgz
         echo "========================================="
     else
         echo " NOT BACKED UP the VOLUME ==> $VOLUME <== in the LIST " >> $volume_log_file

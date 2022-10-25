@@ -90,8 +90,9 @@ docker volume ls --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt
 
 Or Cchange the Variable in the Script it if you want something else
 ```txt
-VOLUMES="/opt/scripts/docker-volume-list.txt"
 DIR="/opt/backup-volume"
+SCRIPT_DIR="/opt/scripts"
+VOLUMES="$SCRIPT_DIR/docker-volume-list.txt"
 ```
 
 &nbsp;
