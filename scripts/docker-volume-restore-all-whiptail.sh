@@ -274,7 +274,7 @@ function BACKUP_VOLUMES_MENU() {
         DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep ${VOLUME}$)
         if [[ "$VOLUME" = "$DOCKER_VOLUME" ]]; then
             echo "========================================="
-            echo " Run backup for Docker volume $VOLUME "
+            echo "Run backup for Docker volume $VOLUME "
             echo "BACKED UP The VOLUME     ==> $VOLUME <== in the MENU " >> $volume_log_file
             $VACKUP export $VOLUME $VOLUME.tgz
             echo "========================================="
@@ -383,7 +383,7 @@ function LIST_BACKUP_TREE() {
     echo "========================================="
     echo "========== ALL BACKUPS FOLDER ==========="
     echo "========================================="
-    tree -ar $DIR
+    tree -ar --sort=name $DIR
     echo "========================================="
     )
     whiptail --title "ALL BACKUPS FOLDER" --scrolltext --msgbox "$LIST_BACKUP" 40 100
@@ -464,15 +464,15 @@ function RESTORE_BACKUP() {
         VOLUMES_TGZ=$(find * -name "${VOLUME}.tgz" 2>/dev/null)
         if [[ ${VOLUME}.tgz = $VOLUMES_TGZ ]]; then
             echo "========================================="
-            echo " Run restore for Docker volume $VOLUME"
+            echo "Run restore for Docker volume $VOLUME"
             $VACKUP import $VOLUME.tgz $VOLUME
-            echo " RESTORE The VOLUME ==> $VOLUME <== in the LIST " >> $volume_restor_log_file
+            echo "RESTORE The VOLUME ================> $VOLUME <== in the LIST " >> $volume_restor_log_file
             echo "========================================="
         else
             echo "========================================="
-            echo " NOT FIND TGZ IN THE FOLDER FROM $VOLUME "
-            echo " NOT FIND TGZ IN THE FOLDER FROM VOLUME ==> $VOLUME <== " >> $volume_restor_log_file
-            echo " NOT RESTORE THE VOLUME ==================> $VOLUME <== in the LIST " >> $volume_restor_log_file
+            echo "NOT TGZ IN THE FOLDER FROM $VOLUME "
+            echo "NOT TGZ IN THE FOLDER FROM VOLUME => $VOLUME <== " >> $volume_restor_log_file
+            echo "NOT RESTORE THE VOLUME ============> $VOLUME <== in the LIST " >> $volume_restor_log_file
             echo "========================================="
         fi
     done
