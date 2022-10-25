@@ -84,6 +84,7 @@ function countdown() {
 }
 function BACKUP_VOLUMES() {
     countdown 5
+    DATE=$(date +%Y-%m-%d--%H-%M-%S)
     echo
     CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
     for CONTAINER in $CONTAINERS
@@ -204,8 +205,22 @@ function RESTORE_BACKUP() {
         echo "Not .tgz found"
         return 1
     fi
-    countdown 10
-    DELETE_BEFOR_RESTORE
+    countdown 5
+    echo
+    echo "Do you want ALL DOCKER Volume delete befor RESTORE"
+    echo
+    echo "========================================="
+    echo " [ y ] - YES"
+    echo " [ n ] - NO"
+    echo "========================================="
+    echo
+    read -n 1 -p 'Enter your answer value: ' value_restore;
+    echo
+    if [[ "$value_restore" =~ (y|Y) ]]; then
+        DELETE_BEFOR_RESTORE
+    else
+        echo > /dev/null
+    fi
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
     echo "" > $volume_restor_log_file
 #    for VOLUME in $(cat $VOLUMES)
@@ -256,7 +271,7 @@ function DELETE_BEFOR_RESTORE() {
         # return 1
     # fi
     echo " VOLUMES BEFORE RESTORE DELETE"
-    countdown 10
+    countdown 5
     for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
     for CONTAINER in $CONTAINERS
     do
@@ -275,7 +290,7 @@ function DELETE_BEFOR_RESTORE() {
         if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
             echo " Error: Failed to start busybox container"
         else
-            echo "Successfully deleite $VOLUME"
+            echo "Successfully delete $VOLUME"
         fi
     done
 }

@@ -79,7 +79,7 @@ if [ -d "$DIR" ]; then
     echo > /dev/null
 else
     DIR_PATH=$(
-    echo "BACKUP Directory does not exist."
+    echo "BACKUP Directory is not exist."
     echo "Create a BACKUP Directory or change the variable DIR= "
     echo " ==> mkdir -p $DIR <== "
     echo "OR Change the Variable DIR= "
@@ -94,11 +94,11 @@ else
         exit 1
     fi
 fi
-if [ -s $VOLUMES ]; then
+if [ -f $VOLUMES ]; then
     echo > /dev/null
 else
     BACKUP_VOLUMES_FILE=$(
-    echo "BACKUP VOLUMES File is empty"
+    echo "BACKUP VOLUMES File is not exist."
     echo "Create a File of your DOCKER VOLUMES"
     echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
     echo
@@ -106,20 +106,20 @@ else
     echo "File $VOLUMES and save present volumes in  the FILE"
     )
     if whiptail --title "BACKUP VOLUMES File is EMTY" --yesno "$BACKUP_VOLUMES_FILE" 20 100; then
-        sleep 0.5
+        sleep 1
         mkdir -p $SCRIPT_DIR && touch $VOLUMES
         docker volume ls --format '{{.Name}}' > $VOLUMES
-        sleep 0.5
+        sleep 1
         VOLUME_LIST_FILE=$( 
-        echo "========================================="
-        echo "============== VOLUME LIST =============="
-        echo "========================================="
+        echo "=================================================================="
+        echo "========================== VOLUME LIST ==========================="
+        echo "=================================================================="
         echo "`cat ${VOLUMES}`"
-        echo "========================================="
+        echo "=================================================================="
         )
-        # whiptail --title "VOLUME LIST" --scrolltext --msgbox "$VOLUME_LIST_FILE" 40 45
-        TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 45
-        sleep 3
+        TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 70
+        # whiptail --title "VOLUME LIST" --scrolltext --msgbox "$VOLUME_LIST_FILE" 40 70
+        sleep 4
         clear
     else
         exit 1
@@ -195,8 +195,90 @@ function BACKUP_VOLUMES() {
        echo "========================================="
     done
     VOLUME_BACKUP_LOG=$(cat $volume_log_file)
-    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 100
-    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 100
+    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 115
+    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 115
+    echo
+    [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
+    echo
+    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} \;
+    clear
+    echo
+    cd $BDIR
+    LIST_BACKUP
+}
+function BACKUP_VOLUMES_MENU() {
+    DOCKER_VOLUME_LS=$(docker volume ls  --format '{{.Name}}')
+    if [[ -z $DOCKER_VOLUME_LS ]]; then
+        # whiptail --title "NO DOCKER VOLUMES" --msgbox "NO DOCKER VOLUMES PRESENT" 8 29
+        TERM=ansi whiptail --title "NO DOCKER VOLUMES" --infobox "NO DOCKER VOLUMES PRESENT" 8 29
+        sleep 3
+        clear
+        return
+    else
+        echo > /dev/null
+    fi
+    # countdown5
+    countdown 5
+    DATE=$(date +%Y-%m-%d--%H-%M-%S)
+    echo
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo "docker stop ${CONTAINER}"
+        docker stop ${CONTAINER}
+        echo "========================================="
+    done
+    echo 
+    cd $DIR
+    i=1
+    LIST_DOCKER_VOLUMES=$(
+    for volume_ls in $DOCKER_VOLUME_LS; do
+    echo "${i} ${volume_ls} OFF"
+    ((i++))
+    done
+    )
+    for volume_ls in $DOCKER_VOLUME_LS; do
+        DOCKER_VOLUMES[${i}]="${volume_ls}"
+        ((i++))
+    done
+    # echo "$LIST_DOCKER_VOLUMES"
+    CHOICES=$(whiptail --separate-output --checklist "Choose options" 35 90 15 \
+    `echo "$LIST_DOCKER_VOLUMES"` 3>&1 1>&2 2>&3)
+    if [ -z "$CHOICES" ]; then
+       clear
+       return
+    else
+       echo "$CHOICES"
+    fi
+    sleep 2
+    volume_log_file="$DIR/volume_log_file.log"
+    echo "" > $volume_log_file
+    mkdir -p $DIR/backup-${DATE} && cd "$_"
+    for CHOICE_NUMBER in $CHOICES
+    do
+        VOLUME="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
+        DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep ${VOLUME}$)
+        if [[ "$VOLUME" = "$DOCKER_VOLUME" ]]; then
+            echo "========================================="
+            echo " Run backup for Docker volume $VOLUME "
+            echo "BACKED UP The VOLUME     ==> $VOLUME <== in the MENU " >> $volume_log_file
+            $VACKUP export $VOLUME $VOLUME.tgz
+            echo "========================================="
+        else
+            echo "NOT BACKED UP the VOLUME ==> $VOLUME <== in the MENU " >> $volume_log_file
+        fi
+    done
+    for CONTAINER in $CONTAINERS
+    do
+       echo "========================================="
+       echo "docker start ${CONTAINER}"
+       docker start ${CONTAINER}
+       echo "========================================="
+    done
+    VOLUME_BACKUP_LOG=$(cat $volume_log_file)
+    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 115
+    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 115
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
@@ -210,14 +292,14 @@ function VOLUME_LIST() {
     echo
     if [ -s $VOLUMES ]; then
         VOLUME_LIST_FILE=$( 
-        echo "========================================="
-        echo "============== VOLUME LIST =============="
-        echo "========================================="
+        echo "=================================================================="
+        echo "========================== VOLUME LIST ==========================="
+        echo "=================================================================="
         echo "`cat ${VOLUMES}`"
-        echo "========================================="
+        echo "=================================================================="
         )
-        # TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 45
-        whiptail --title "VOLUME LIST" --scrolltext --msgbox "$VOLUME_LIST_FILE" 40 45
+        # TERM=ansi whiptail --title "VOLUME LIST" --infobox "$VOLUME_LIST_FILE" 40 70
+        whiptail --title "VOLUME LIST" --scrolltext --msgbox "$VOLUME_LIST_FILE" 40 70
         # sleep 3
         return 0
     else
@@ -230,6 +312,7 @@ function VOLUME_LIST() {
         )
         TERM=ansi whiptail --title " VOLUMES File is EMPTY" --infobox "VOLUME_LIST_EMPTY" 11 45
         sleep 5
+        clear
         return 0
     fi
 }
@@ -450,10 +533,11 @@ while [ true ];
 do
 CHOICE=$(
 whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
-    "[ 1 ]" "BACKUP VOLUMES" \
-    "[ 2 ]" "LIST ALL VOLUMES BACKUP" \
-    "[ 3 ]" "RESTORE VOLUMES BACKUP" \
-    "[ 4 ]" "VOLUME LIST FILE" \
+    "[ 1 ]" "BACKUP VOLUMES FROM FILE LIST" \
+    "[ 2 ]" "BACKUP VOLUMES FROM MENU (docker volume ls)" \
+    "[ 3 ]" "LIST ALL VOLUMES BACKUP" \
+    "[ 4 ]" "RESTORE VOLUMES FROM FILE LIST" \
+    "[ 5 ]" "VOLUME LIST FILE" \
     "[ h ]" "HELP OUTPUT" \
     "[ e ]" "exit"  3>&1 1>&2 2>&3
 )
@@ -463,12 +547,15 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
             BACKUP_VOLUMES
             ;;
         "[ 2 ]")
-            LIST_BACKUP_TREE
+            BACKUP_VOLUMES_MENU
             ;;
         "[ 3 ]")
-            RESTORE_BACKUP
+            LIST_BACKUP_TREE
             ;;
         "[ 4 ]")
+            RESTORE_BACKUP
+            ;;
+        "[ 5 ]")
             VOLUME_LIST
             ;;
         # 5)
