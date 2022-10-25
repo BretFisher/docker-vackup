@@ -231,20 +231,6 @@ function BACKUP_VOLUMES_MENU() {
     else
         echo > /dev/null
     fi
-    # countdown5
-    countdown 5
-    DATE=$(date +%Y-%m-%d--%H-%M-%S)
-    echo
-    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
-    for CONTAINER in $CONTAINERS
-    do
-        echo "========================================="
-        echo "docker stop ${CONTAINER}"
-        docker stop ${CONTAINER}
-        echo "========================================="
-    done
-    echo 
-    cd $DIR
     i=1
     LIST_DOCKER_VOLUMES=$(
     for volume_ls in $DOCKER_VOLUME_LS; do
@@ -266,6 +252,19 @@ function BACKUP_VOLUMES_MENU() {
        echo "$CHOICES"
     fi
     sleep 2
+    # countdown5
+    countdown 5
+    DATE=$(date +%Y-%m-%d--%H-%M-%S)
+    echo
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo "docker stop ${CONTAINER}"
+        docker stop ${CONTAINER}
+        echo "========================================="
+    done
+    cd $DIR
     volume_log_file="$DIR/volume_log_file.log"
     echo -n "" > $volume_log_file
     mkdir -p $DIR/backup-${DATE} && cd "$_"
