@@ -526,6 +526,157 @@ function DELETE_BEFOR_RESTORE() {
         fi
     done
 }
+function RESTORE_BACKUP_MENU() {
+    # countdown 5
+    # countdown5
+    LIST_BACKUP_TREE
+    cd $DIR
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
+    i=1
+    declare -A FOLDER_SELECTION
+    if [[ $(find ${DIR}/backup-* -maxdepth 1 -type d 2> /dev/null| wc -l) -lt 1 ]]; then
+        TERM=ansi whiptail --title "Location has no Backups" --infobox "======== Location has no Backups ========" 11 45
+        sleep 3
+        clear
+        return 0
+    fi
+    LIST_BACKUPS_FOLDER=$(
+    echo "========================================="
+    echo "========== ALL BACKUPS FOLDER ==========="
+    echo "========================================="
+    for folder in $(ls -td backup-*); do
+        echo "[ ${i} ] - ${folder}"
+        ((i++))
+    done
+    echo "========================================="
+    )
+    for folder in $(ls -td backup-*); do
+        FOLDER_SELECTION[${i}]="${folder}"
+        ((i++))
+    done
+    input_sel=0
+    while [[ ${input_sel} -lt 1 ||  ${input_sel} -gt ${i} ]]; do
+        input_sel=$(whiptail --title "ALL BACKUPS FOLDER" --inputbox "$LIST_BACKUPS_FOLDER" 40 45 3>&1 1>&2 2>&3)
+        echo
+        # echo "$input_sel"
+        if [ -z "$input_sel" ]; then
+            return 0
+        else
+            echo
+        fi
+        # LIST_BACKUPS=$(TERM=ansi whiptail --title "ALL BACKUPS FOLDER" --infobox "$LIST_BACKUPS_FOLDER  Select a restore point: " 50 45)
+        # echo "$LIST_BACKUPS"
+        # read -p " Select a restore point: " input_sel
+        # echo "$input_sel"
+    done
+    echo
+    RESTORE_POINT="${DIR}/${FOLDER_SELECTION[${input_sel}]}/"
+    cd $RESTORE_POINT
+    if [ "$(find $RESTORE_POINT -name "*.tgz" 2>/dev/null)" ]; then
+        echo > /dev/null
+    else
+        TERM=ansi whiptail --title "NO TAR GZ FOUND" --infobox "============= Not .tgz found ============" 11 45
+        sleep 3
+        clear
+        return 0
+    fi
+    LIST_TAR_GZ=$(ls -ar *.tgz)
+    ii=1
+    LIST_DOCKER_VOLUMES=$(
+    for volume_ls in $LIST_TAR_GZ; do
+    echo "${ii} ${volume_ls} OFF"
+    ((ii++))
+    done
+    )
+    for volume_ls in $LIST_TAR_GZ; do
+        DOCKER_VOLUMES[${ii}]="${volume_ls}"
+        ((ii++))
+    done
+    CHOICES=$(whiptail --separate-output --checklist "Choose options" 35 90 15 \
+    `echo "$LIST_DOCKER_VOLUMES"` 3>&1 1>&2 2>&3)
+    if [ -z "$CHOICES" ]; then
+       clear
+       return
+    else
+       echo "$CHOICES"
+    fi
+    sleep 2
+    volume_restor_log_file="$DIR/volume_restore_log_file.log"
+    echo -n "" > $volume_restor_log_file
+    if whiptail --yesno "Do you want ALL DOCKER Volume delete befor RESTORE" 10 45; then
+        for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
+        for CONTAINER in $CONTAINERS
+        do
+            echo "========================================="
+            echo " docker stop ${CONTAINER}"
+            docker stop ${CONTAINER}
+            echo "========================================="
+        done
+        for CHOICE_NUMBER in $CHOICES
+        do
+            VOLUME_TAR_GZ="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
+            VOLUME=${VOLUME_TAR_GZ::-4}
+            if ! docker volume inspect --format '{{.Name}}' "$VOLUME"; then
+                echo " Error: Volume $VOLUME does not exist"
+                echo " Docker create Volume $VOLUME "
+                echo " Error: Volume $VOLUME does not exist" >> $volume_restor_log_file
+                echo " Docker create Volume $VOLUME " >> $volume_restor_log_file
+                docker volume create "$VOLUME"
+            fi
+            if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+                echo " Error: Failed to start busybox container"
+                echo " Error: Failed to start busybox container" >> $volume_restor_log_file
+            else
+                echo "Successfully delete $VOLUME"
+                echo "Successfully delete $VOLUME" >> $volume_restor_log_file
+            fi
+        done
+    else
+        for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
+        for CONTAINER in $CONTAINERS
+        do
+            echo "========================================="
+            echo " docker stop ${CONTAINER}"
+            docker stop ${CONTAINER}
+            echo "========================================="
+        done
+    fi
+    for CHOICE_NUMBER in $CHOICES
+    do
+        VOLUME_TAR_GZ="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
+        VOLUME=${VOLUME_TAR_GZ::-4}
+        if [[ "$VOLUME_TAR_GZ" = "${VOLUME}.tgz" ]]; then
+            echo "========================================="
+            echo "Run restore for Docker volume $VOLUME"
+            $VACKUP import $VOLUME_TAR_GZ $VOLUME
+            echo "RESTORE The VOLUME =====================> $VOLUME <== from the Menu" >> $volume_restor_log_file
+            echo "========================================="
+        else
+            echo "========================================="
+            echo "$VOLUME $VOLUME_TAR_GZ"
+            echo "NOT FIND IN THE FOLDER FROM $VOLUME "
+            echo "NOT FIND TGZ IN THE FOLDER FROM VOLUME => $VOLUME <== " >> $volume_restor_log_file
+            echo "NOT RESTORE THE VOLUME =================> $VOLUME <== from the Menu" >> $volume_restor_log_file
+            echo "========================================="
+        fi
+    done
+    for CONTAINER in $CONTAINERS
+    do
+        echo "========================================="
+        echo " docker start ${CONTAINER}"
+        docker start ${CONTAINER}
+        echo "========================================="
+    done
+    clear
+    VOLUME_RESTORE_LOG=$(cat $volume_restor_log_file)
+    # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
+    sleep 3
+    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 100
+    echo
+    [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
+    cd $BDIR
+    clear
+}
 function VOLUME_LIST_CREATE() {
     DOCKER_VOLUME_LS=$(docker volume ls  --format '{{.Name}}')
     if [[ -z $DOCKER_VOLUME_LS ]]; then
@@ -608,8 +759,9 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
     "[ 2 ]" "BACKUP VOLUMES FROM MENU (docker volume ls)" \
     "[ 3 ]" "LIST ALL VOLUMES BACKUP" \
     "[ 4 ]" "RESTORE VOLUMES FROM FILE LIST" \
-    "[ 5 ]" "VOLUME LIST FILE" \
-    "[ 6 ]" "VOLUME CREATE LIST FILE FROM MENU" \
+    "[ 5 ]" "RESTORE VOLUMES FROM MENU" \
+    "[ 6 ]" "VOLUME LIST FILE" \
+    "[ 7 ]" "VOLUME CREATE LIST FILE FROM MENU" \
     "[ h ]" "HELP OUTPUT" \
     "[ e ]" "exit"  3>&1 1>&2 2>&3
 )
@@ -628,12 +780,15 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
             RESTORE_BACKUP
             ;;
         "[ 5 ]")
-            VOLUME_LIST
+            RESTORE_BACKUP_MENU
             ;;
         "[ 6 ]")
+            VOLUME_LIST
+            ;;
+        "[ 7 ]")
             VOLUME_LIST_CREATE
             ;;
-        # 5)
+        # "[ 8 ]")
             # DELETE_BEFOR_RESTORE
             # ;;
         "[ h ]")
