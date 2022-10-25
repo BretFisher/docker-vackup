@@ -187,7 +187,7 @@ function BACKUP_VOLUMES() {
     echo 
     cd $DIR
     volume_log_file="$DIR/volume_log_file.log"
-    cat /dev/null > $volume_log_file
+    echo -n "" > $volume_log_file
     mkdir -p $DIR/backup-${DATE} && cd "$_"
     for VOLUME in $(cat $VOLUMES)
     do
@@ -268,7 +268,7 @@ function BACKUP_VOLUMES_MENU() {
     fi
     sleep 2
     volume_log_file="$DIR/volume_log_file.log"
-    cat /dev/null > $volume_log_file
+    echo -n "" > $volume_log_file
     mkdir -p $DIR/backup-${DATE} && cd "$_"
     for CHOICE_NUMBER in $CHOICES
     do
@@ -460,7 +460,7 @@ function RESTORE_BACKUP() {
         done
     fi
     volume_restor_log_file="$DIR/volume_restore_log_file.log"
-    cat /dev/null > $volume_restor_log_file
+    echo -n "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
     do
         VOLUMES_TGZ=$(find * -name "${VOLUME}.tgz" 2>/dev/null)
@@ -558,11 +558,11 @@ function VOLUME_LIST_CREATE() {
        return
     else
        echo "$CHOICES"
-       cat /dev/null > $VOLUMES
+       echo -n "" > $VOLUMES
     fi
     sleep 2
     volume_log_file="$DIR/volume_log_file.log"
-    cat /dev/null > $volume_log_file
+    echo -n "" > $volume_log_file
     for CHOICE_NUMBER in $CHOICES
     do
         VOLUME="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
