@@ -83,6 +83,14 @@ function countdown() {
     echo
 }
 function BACKUP_VOLUMES() {
+    if [ -s $VOLUMES ]; then
+        echo > /dev/null
+    else
+        echo 
+        echo " VOLUMES File is empty "
+        sleep 2
+        return 1
+    fi
     countdown 5
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
     echo

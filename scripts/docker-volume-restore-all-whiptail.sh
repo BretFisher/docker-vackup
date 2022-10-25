@@ -157,6 +157,21 @@ done
 } | whiptail --title "COUNTDOWN" --gauge "=============== COUNTDOWN ===============" 7 45 0
 }
 function BACKUP_VOLUMES() {
+    if [ -s $VOLUMES ]; then
+        echo > /dev/null
+    else
+        echo 
+        # echo " VOLUMES File is empty "
+        VOLUME_LIST_EMPTY=$(
+        echo "========================================="
+        echo "========= VOLUMES File is EMPTY ========="
+        echo "========================================="
+        )
+        TERM=ansi whiptail --title " VOLUMES File is EMPTY" --infobox "VOLUME_LIST_EMPTY" 11 45
+        sleep 5
+        clear
+        return 0
+    fi
     # countdown5
     countdown 5
     DATE=$(date +%Y-%m-%d--%H-%M-%S)
