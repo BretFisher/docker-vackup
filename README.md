@@ -75,7 +75,7 @@ for vmr in $(ls *.tgz); do vackup import $vmr ${vmr%%.*} ; done
 
 &nbsp;
 
-# Volume Backup Script from the a list and Restore Menu
+# Volume Backup Script from a Volume list and Restore Menu
 
 
 &nbsp;
