@@ -751,12 +751,11 @@ function VOLUME_LIST_CREATE() {
         fi
     done
     VOLUME_BACKUP_LOG=$(cat $volume_log_file)
-    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 115
+    # TERM=ansi whiptail --title "VOLUME LIST CREATE FROM MENU" --infobox "$VOLUME_BACKUP_LOG" 40 115
     whiptail --title "VOLUME LIST CREATE FROM MENU" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 115
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
-    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} \;
     clear
     VOLUME_LIST
 }
