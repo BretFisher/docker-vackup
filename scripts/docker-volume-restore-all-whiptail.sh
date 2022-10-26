@@ -210,7 +210,7 @@ function BACKUP_VOLUMES() {
     done
     VOLUME_BACKUP_LOG=$(cat $volume_log_file)
     # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_BACKUP_LOG" 40 115
-    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 115
+    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_BACKUP_LOG" 40 120
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
@@ -380,11 +380,11 @@ function LIST_BACKUP_TREE() {
     fi
     echo
     LIST_BACKUP=$(
-    echo "========================================="
-    echo "========== ALL BACKUPS FOLDER ==========="
-    echo "========================================="
+    echo "================================================================================================"
+    echo "====================================== ALL BACKUPS FOLDER ======================================"
+    echo "================================================================================================"
     tree -ar --sort=name $DIR
-    echo "========================================="
+    echo "================================================================================================"
     )
     whiptail --title "ALL BACKUPS FOLDER" --scrolltext --msgbox "$LIST_BACKUP" 40 100
     cd $BDIR
@@ -445,8 +445,34 @@ function RESTORE_BACKUP() {
     fi
     # countdown5
     # countdown 5
+    volume_restor_log_file="$DIR/volume_restore_log_file.log"
+    echo -n "" > $volume_restor_log_file
     if whiptail --yesno "Do you want ALL DOCKER Volume delete befor RESTORE" 10 45; then
-        DELETE_BEFOR_RESTORE
+        for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
+        for CONTAINER in $CONTAINERS
+        do
+            echo "========================================="
+            echo " docker stop ${CONTAINER}"
+            docker stop ${CONTAINER}
+            echo "========================================="
+        done
+        for VOLUME in $(cat $VOLUMES)
+        do
+            if ! docker volume inspect --format '{{.Name}}' "$VOLUME"; then
+                echo "Error: Volume =====================> $VOLUME <== does not exist"
+                echo "Docker create Volume ==============> $VOLUME <=="
+                echo "Error: Volume =====================> $VOLUME <== does not exist" >> $volume_restor_log_file
+                echo "Docker create Volume ==============> $VOLUME <==" >> $volume_restor_log_file
+                docker volume create "$VOLUME"
+            fi
+            if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+                echo "Error: Failed to start busybox container"
+                echo "Error: Failed to start busybox container" >> $volume_restor_log_file
+            else
+                echo "Successfully delete ===============> $VOLUME <=="
+                echo "Successfully delete ===============> $VOLUME <==" >> $volume_restor_log_file
+            fi
+        done
     else
         for CONTAINER in $CONTAINERS; do echo -e "\\ndocker stop ${CONTAINER}"; done
         for CONTAINER in $CONTAINERS
@@ -457,8 +483,6 @@ function RESTORE_BACKUP() {
             echo "========================================="
         done
     fi
-    volume_restor_log_file="$DIR/volume_restore_log_file.log"
-    echo -n "" > $volume_restor_log_file
     for VOLUME in $(cat $VOLUMES)
     do
         VOLUMES_TGZ=$(find * -name "${VOLUME}.tgz" 2>/dev/null)
@@ -488,7 +512,7 @@ function RESTORE_BACKUP() {
     VOLUME_RESTORE_LOG=$(cat $volume_restor_log_file)
     # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
     sleep 3
-    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 100
+    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 125
     echo
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
@@ -617,18 +641,18 @@ function RESTORE_BACKUP_MENU() {
             VOLUME_TAR_GZ="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
             VOLUME=${VOLUME_TAR_GZ::-4}
             if ! docker volume inspect --format '{{.Name}}' "$VOLUME"; then
-                echo " Error: Volume $VOLUME does not exist"
-                echo " Docker create Volume $VOLUME "
-                echo " Error: Volume $VOLUME does not exist" >> $volume_restor_log_file
-                echo " Docker create Volume $VOLUME " >> $volume_restor_log_file
+                echo "Error: Volume ==========================> $VOLUME <== does not exist"
+                echo "Docker create Volume ===================> $VOLUME <=="
+                echo "Error: Volume ==========================> $VOLUME <== does not exist" >> $volume_restor_log_file
+                echo "Docker create Volume ===================> $VOLUME <==" >> $volume_restor_log_file
                 docker volume create "$VOLUME"
             fi
             if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
-                echo " Error: Failed to start busybox container"
-                echo " Error: Failed to start busybox container" >> $volume_restor_log_file
+                echo "Error: Failed to start busybox container"
+                echo "Error: Failed to start busybox container" >> $volume_restor_log_file
             else
-                echo "Successfully delete $VOLUME"
-                echo "Successfully delete $VOLUME" >> $volume_restor_log_file
+                echo "Successfully delete ====================> $VOLUME <=="
+                echo "Successfully delete ====================> $VOLUME <==" >> $volume_restor_log_file
             fi
         done
     else
@@ -671,7 +695,7 @@ function RESTORE_BACKUP_MENU() {
     VOLUME_RESTORE_LOG=$(cat $volume_restor_log_file)
     # TERM=ansi whiptail --title "RESTORE VOLUMES STATUS" --infobox "$VOLUME_RESTORE_LOG" 40 100
     sleep 3
-    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 100
+    whiptail --title "RESTORE VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_RESTORE_LOG" 40 135
     echo
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
@@ -707,6 +731,7 @@ function VOLUME_LIST_CREATE() {
        return
     else
        echo "$CHOICES"
+       mkdir -p $SCRIPT_DIR && touch $VOLUMES
        echo -n "" > $VOLUMES
     fi
     sleep 2
