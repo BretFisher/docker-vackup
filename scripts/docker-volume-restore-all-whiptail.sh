@@ -760,6 +760,17 @@ function VOLUME_LIST_CREATE() {
     clear
     VOLUME_LIST
 }
+function CTOP() {
+    if whiptail --title "CTOP" --yesno "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop" 20 100; then
+        sleep 1
+        docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest
+        sleep 1
+    else
+        return 0
+    fi
+    # whiptail --title "CTOP" --msgbox "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop" 40 115
+    # docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest
+}
 function HELP() {
     HELP=$(
     echo "========================================="
@@ -787,6 +798,7 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
     "[ 5 ]" "RESTORE VOLUMES FROM MENU" \
     "[ 6 ]" "VOLUME LIST FILE" \
     "[ 7 ]" "VOLUME CREATE LIST FILE FROM MENU" \
+    "[ c ]" "CTOP" \
     "[ h ]" "HELP OUTPUT" \
     "[ e ]" "exit"  3>&1 1>&2 2>&3
 )
@@ -816,6 +828,9 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
         # "[ 8 ]")
             # DELETE_BEFOR_RESTORE
             # ;;
+        "[ c ]")
+            CTOP
+            ;;
         "[ h ]")
             HELP
             ;;
