@@ -761,7 +761,14 @@ function VOLUME_LIST_CREATE() {
     VOLUME_LIST
 }
 function CTOP() {
-    if whiptail --title "CTOP" --yesno "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop" 20 100; then
+    CTOP_ECHO=$(
+    echo "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop"
+    echo
+    echo "docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest"
+    echo
+    echo "Do you want to START Ctop"
+    )
+    if whiptail --title "CTOP" --yesno "$CTOP_ECHO" 20 120; then
         sleep 1
         docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest
         sleep 1
@@ -798,7 +805,7 @@ whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
     "[ 5 ]" "RESTORE VOLUMES FROM MENU" \
     "[ 6 ]" "VOLUME LIST FILE" \
     "[ 7 ]" "VOLUME CREATE LIST FILE FROM MENU" \
-    "[ c ]" "CTOP" \
+    "[ c ]" "CTOP: Top-like interface for container" \
     "[ h ]" "HELP OUTPUT" \
     "[ e ]" "exit"  3>&1 1>&2 2>&3
 )
