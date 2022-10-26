@@ -225,4 +225,8 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 
 ![DEMO GIF](/demo/demo-2.gif)
 
+### Usage DEMO 2
+
+![DEMO GIF](/demo/demo-3.gif)
+
 &nbsp;
