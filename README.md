@@ -212,7 +212,7 @@ $ root@docker:/opt/scripts#
 
 &nbsp;
 
-![DEMO GIF](/demo/demo-1.gif)
+<img src="demo/demo-1.gif" width="650" height="400">
 
 ## Volume Restore Menu with Whiptail
 
@@ -223,10 +223,10 @@ curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/sc
 
 ### Usage DEMO
 
-![DEMO GIF](/demo/demo-2.gif)
+<img src="demo/demo-2.gif" width="650" height="400">
 
 ### Usage DEMO 2
 
-![DEMO GIF](/demo/demo-3.gif)
+<img src="demo/demo-3.gif" width="650" height="400">
 
 &nbsp;
