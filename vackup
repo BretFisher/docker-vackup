@@ -23,10 +23,10 @@ cat <<EOF
 export/import copies files between a host tarball and a volume. For making
   volume backups and restores.
 
-save/load copies files between an image and a volume. For when you want to use 
+save/load copies files between an image and a volume. For when you want to use
   image registries as a way to push/pull volume data.
 
-Usage: 
+Usage:
 
 vackup export VOLUME FILE
   Creates a gzip'ed tarball in current directory from a volume
@@ -83,7 +83,7 @@ cmd_export() {
         msg 1 "Error: Not enough arguments"
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
         msg 1 "Error: Volume $VOLUME_NAME does not exist"
     fi
@@ -117,7 +117,7 @@ cmd_import() {
         msg 1 "Error: Not enough arguments"
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
         msg 0 "Error: Volume $VOLUME_NAME does not exist"
         docker volume create "$VOLUME_NAME"
@@ -126,7 +126,7 @@ cmd_import() {
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
 # TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths    
+# unless we can translate full file paths
 
     if ! docker run --rm \
       -e "FILE_NAME=$FILE_NAME" -e "VACKUP_COMPRESS=$VACKUP_COMPRESS" \
@@ -150,7 +150,7 @@ cmd_save() {
         msg 1 "Error: Not enough arguments"
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"
     then
         msg 1 "Error: Volume $VOLUME_NAME does not exist"
     fi
@@ -158,7 +158,7 @@ cmd_save() {
     if ! docker run \
       -v "$VOLUME_NAME":/mount-volume \
       busybox \
-      cp -Rp /mount-volume/. /volume-data/;
+      cp -Rp /mount-volume/. /volume-data/
     then
         msg 1 "Error: Failed to start busybox container"
     fi
@@ -181,7 +181,7 @@ cmd_load() {
         msg 1 "Error: Not enough arguments"
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"
     then
       msg 0 "Volume $VOLUME_NAME does not exist, creating..."
       docker volume create "$VOLUME_NAME"
@@ -190,7 +190,7 @@ cmd_load() {
     if ! docker run --rm \
       -v "$VOLUME_NAME":/mount-volume \
       "$IMAGE_NAME" \
-      cp -Rp /volume-data/. /mount-volume/; 
+      cp -Rp /volume-data/. /mount-volume/
     then
         msg 1 "Error: Failed to start container from $IMAGE_NAME"
     fi
