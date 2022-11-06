@@ -295,7 +295,7 @@ function DELETE_BEFOR_RESTORE() {
             echo " Docker create Volume $VOLUME "
             docker volume create "$VOLUME"
         fi
-        if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+        if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
             echo " Error: Failed to start busybox container"
         else
             echo "Successfully delete $VOLUME"
