@@ -26,15 +26,15 @@ export/import copies files between a host tarball and a volume. For making
 save/load copies files between an image and a volume. For when you want to use
   image registries as a way to push/pull volume data.
 
-Usage: vackup COMMAND [ARG..]
-FILE args must have known suffixes: { .tar[.{ gz | bz2 | xz }] | .tgz | .txz }
+Usage: vackup COMMAND [ARG..]; FILE args must have known suffixes:
+  FILE = .{ tar[.{ gz | bz2 | xz | zst[d] }] | tgz | txz }
 
 vackup export VOLUME FILE
   Create a (compressed) tarball in current directory from a volume.
-  xz compression is not available.
 
 vackup import FILE VOLUME
   Extract a tarball into a volume.
+  zstd decompression is not available.
 
 vackup save VOLUME IMAGE
   Copy volume contents to the /volume-data directory of a busybox image.
@@ -66,6 +66,8 @@ detect_compression() {  # args: filename (de)compress-flag
         (*.bz2)  VACKUP_COMPRESS=bzip2 ;;
         (*.xz)   VACKUP_COMPRESS=xz ;;
         (*.txz)  VACKUP_COMPRESS=xz ;;
+        (*.zst)  VACKUP_COMPRESS=zstd ;;
+        (*.zstd) VACKUP_COMPRESS=zstd ;;
         (*)
           msg 1 "Error: unknown extension ${1##*.}"
           ;;
@@ -83,9 +85,8 @@ cmd_export() {
     FILE_NAME=$3
 
     detect_compression "$FILE_NAME" -c
-    if [ "${VACKUP_COMPRESS%% *}" = xz ]; then
-        msg 1 'Error: .tar.xz export not supported'
-    fi
+    command -v "${VACKUP_COMPRESS%% *}" >/dev/null ||
+      msg 1 "Error: ${VACKUP_COMPRESS%% *} not available on host"
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
@@ -94,16 +95,12 @@ cmd_export() {
 
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
-# TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths
 
-    if ! docker run --rm \
-      -e "FILE_NAME=$FILE_NAME" -e "VACKUP_COMPRESS=$VACKUP_COMPRESS" \
+    set -- docker run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$(pwd)":/vackup \
       busybox \
-      sh -c 'tar -cvf - /vackup-volume | $VACKUP_COMPRESS >/vackup/"$FILE_NAME"'
-    then
+      tar -cvf - /vackup-volume  # tar -vf - outputs list to stderr
+    if ! "$@" | $VACKUP_COMPRESS >"$FILE_NAME"; then
         msg 1 "Error: Failed to start busybox backup container"
     fi
 
@@ -120,6 +117,9 @@ cmd_import() {
     VOLUME_NAME=$3
 
     detect_compression "$FILE_NAME" -d
+    if [ "${VACKUP_COMPRESS%% *}" = zstd ]; then
+        msg 1 'Error: zstd import not supported'
+    fi
 
     if [ ! -r "$FILE_NAME" ]; then
         msg 1 "Error: Cannot open \"$FILE_NAME\""
