@@ -180,10 +180,10 @@ cmd_load() {
 
 COMMAND=$1
 case "$COMMAND" in
-  export) cmd_export "$@" ;;
-  import) cmd_import "$@" ;;
-  save) cmd_save "$@" ;;
-  load) cmd_load "$@" ;;
+  (export) cmd_export "$@" ;;
+  (import) cmd_import "$@" ;;
+  (save) cmd_save "$@" ;;
+  (load) cmd_load "$@" ;;
 esac
 
 exit 0
