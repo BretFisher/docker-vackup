@@ -58,7 +58,7 @@ cmd_export() {
         exit 1
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
         exit 1
@@ -92,7 +92,7 @@ cmd_import() {
         exit 1
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
         docker volume create "$VOLUME_NAME"
