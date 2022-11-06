@@ -16,7 +16,7 @@ handle_error() {
 trap 'handle_error $LINENO' ERR
 
 usage() {
-cat <<EOF
+cat >&2 <<"EOF"
 
 "Docker Volume Backup". Replicates image management commands for volumes.
 
@@ -26,19 +26,23 @@ export/import copies files between a host tarball and a volume. For making
 save/load copies files between an image and a volume. For when you want to use
   image registries as a way to push/pull volume data.
 
-Usage:
+Usage: vackup COMMAND [ARG..]
+FILE args must have known suffixes: { .tar[.{ gz | bz2 | xz }] | .tgz | .txz }
 
 vackup export VOLUME FILE
-  Creates a gzip'ed tarball in current directory from a volume
+  Create a (compressed) tarball in current directory from a volume.
+  xz compression is not available.
 
 vackup import FILE VOLUME
-  Extracts a gzip'ed tarball into a volume
+  Extract a tarball into a volume.
 
 vackup save VOLUME IMAGE
-  Copies the volume contents to a busybox image in the /volume-data directory
+  Copy volume contents to the /volume-data directory of a busybox image.
 
 vackup load IMAGE VOLUME
-  Copies /volume-data contents from an image to a volume
+  Copy /volume-data contents from an image to a volume.
+
+Environment: $VACKUP_FAILURE_SCRIPT, $VACKUP_COMPRESS
 
 EOF
 }
@@ -48,8 +52,8 @@ msg() {  # args: exit_code msg
     return "$1"
 }
 
-if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
-    usage
+if [ $# = 0 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    usage 2>&1  # print usage to stdout on request (unlike on error)
     exit 0
 fi
 
@@ -70,17 +74,17 @@ detect_compression() {  # args: filename (de)compress-flag
 }
 
 cmd_export() {
+    if [ $# != 3 ]; then
+        usage
+        msg 1 "Error: wrong number of arguments"
+    fi
+
     VOLUME_NAME=$2
     FILE_NAME=$3
 
     detect_compression "$FILE_NAME" -c
     if [ "${VACKUP_COMPRESS%% *}" = xz ]; then
         msg 1 'Error: .tar.xz export not supported'
-    fi
-
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        usage
-        msg 1 "Error: Not enough arguments"
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
@@ -107,15 +111,15 @@ cmd_export() {
 }
 
 cmd_import() {
+    if [ $# != 3 ]; then
+        usage
+        msg 1 "Error: wrong number of arguments"
+    fi
+
     FILE_NAME=$2
     VOLUME_NAME=$3
 
     detect_compression "$FILE_NAME" -d
-
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        usage
-        msg 1 "Error: Not enough arguments"
-    fi
 
     if [ ! -r "$FILE_NAME" ]; then
         msg 1 "Error: Cannot open \"$FILE_NAME\""
@@ -123,7 +127,7 @@ cmd_import() {
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
-        msg 0 "Error: Volume $VOLUME_NAME does not exist"
+        msg 0 "Warning: Volume $VOLUME_NAME does not exist, will be created"
         docker volume create "$VOLUME_NAME"
     fi
 
@@ -146,13 +150,13 @@ cmd_import() {
 }
 
 cmd_save() {
+    if [ $# != 3 ]; then
+        usage
+        msg 1 "Error: wrong number of arguments"
+    fi
+
     VOLUME_NAME=$2
     IMAGE_NAME=$3
-
-    if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        usage
-        msg 1 "Error: Not enough arguments"
-    fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"
     then
@@ -177,13 +181,13 @@ cmd_save() {
 }
 
 cmd_load() {
+    if [ $# != 3 ]; then
+        usage
+        msg 1 "Error: wrong number of arguments"
+    fi
+
     IMAGE_NAME=$2
     VOLUME_NAME=$3
-
-    if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        usage
-        msg 1 "Error: Not enough arguments"
-    fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"
     then
@@ -208,6 +212,10 @@ case "$COMMAND" in
   (import) cmd_import "$@" ;;
   (save) cmd_save "$@" ;;
   (load) cmd_load "$@" ;;
+  (*)
+      usage
+      msg 1 "Error: Unknown operation $COMMAND"
+      ;;
 esac
 
 exit 0
