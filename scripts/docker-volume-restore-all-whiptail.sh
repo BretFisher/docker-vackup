@@ -465,7 +465,7 @@ function RESTORE_BACKUP() {
                 echo "Docker create Volume ==============> $VOLUME <==" >> $volume_restor_log_file
                 docker volume create "$VOLUME"
             fi
-            if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+            if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
                 echo "Error: Failed to start busybox container"
                 echo "Error: Failed to start busybox container" >> $volume_restor_log_file
             else
@@ -543,7 +543,7 @@ function DELETE_BEFOR_RESTORE() {
             echo " Docker create Volume $VOLUME "
             docker volume create "$VOLUME"
         fi
-        if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+        if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
             echo " Error: Failed to start busybox container"
         else
             echo "Successfully delete $VOLUME"
@@ -647,7 +647,7 @@ function RESTORE_BACKUP_MENU() {
                 echo "Docker create Volume ===================> $VOLUME <==" >> $volume_restor_log_file
                 docker volume create "$VOLUME"
             fi
-            if ! docker run --rm -v "$VOLUME":/vackup-volume  busybox rm -Rfv /vackup-volume/*; then
+            if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
                 echo "Error: Failed to start busybox container"
                 echo "Error: Failed to start busybox container" >> $volume_restor_log_file
             else
@@ -759,6 +759,245 @@ function VOLUME_LIST_CREATE() {
     clear
     VOLUME_LIST
 }
+function DOCKER_STOP_CONTAINER() {
+    CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2)
+    CONTAINERS_STATUS=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+    # docker container ls --format 'table {{.Names}} {{.Status}}'
+    if [[ -z $CONTAINERS ]]; then
+        # whiptail --title "NO DOCKER CONTAINERS" --msgbox "NO DOCKER CONTAINERS PRESENT OR RUNNING" 8 43
+        TERM=ansi whiptail --title "NO DOCKER CONTAINERS" --infobox "NO DOCKER CONTAINERS PRESENT OR RUNNING" 8 43
+        sleep 3
+        clear
+        return
+    else
+        echo > /dev/null
+    fi
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINERS_STATUS" 30 70
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS" 30 70
+    if whiptail --title "DOCKER CONTAINER STOP" --yesno "Do you want ALL DOCKER CONTAINER STOP \n$CONTAINERS" 20 100; then
+        for CONTAINER in $CONTAINERS ; do docker stop $CONTAINER;  done
+        sleep 1
+        CONTAINERS_STATUS_STOP_ALL=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+        whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS_STOP_ALL" 30 70
+        clear
+        return
+    else
+        echo /dev/null
+    fi
+    i=1
+    LIST_DOCKER_CONTAINERS=$(
+    for container_list in $CONTAINERS; do
+    echo "${i} ${container_list} OFF"
+    ((i++))
+    done
+    )
+    for container_list in $CONTAINERS; do
+        DOCKER_CONTAINER[${i}]="${container_list}"
+        ((i++))
+    done
+    # echo "$LIST_DOCKER_CONTAINERS"
+    CHOICES=$(whiptail --separate-output --checklist "Choose options" 30 60 15 \
+    `echo "$LIST_DOCKER_CONTAINERS"` 3>&1 1>&2 2>&3)
+    if [ -z "$CHOICES" ]; then
+       clear
+       return
+    else
+       echo "$CHOICES"
+    fi
+    sleep 2
+    # countdown5
+    # countdown 5
+    echo
+    cd $DIR
+    container_log_file="$DIR/container_log_file.log"
+    echo -n "" > $container_log_file
+    for CHOICE_NUMBER in $CHOICES
+    do
+        CONTAINER="${DOCKER_CONTAINER[${CHOICE_NUMBER}]}"
+        DOCKER_CONTAINERS=$(docker container ls --format 'table {{.Names}}' | tail -n +2 | grep ${CONTAINER}$)
+        if [[ "$CONTAINER" = "$DOCKER_CONTAINERS" ]]; then
+            echo "========================================="
+            echo "Run stop Docker CONTAINER $CONTAINER"
+            echo "CONTAINER STOPPED ==> $CONTAINER <== in the MENU " >> $container_log_file
+            docker stop $CONTAINER
+            echo "========================================="
+        else
+            echo "NOT CONTAINER STOPPED ==> $CONTAINER <== in the MENU " >> $container_log_file
+        fi
+    done
+    CONTAINER_LOG=$(cat $container_log_file)
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINER_LOG" 30 90
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINER_LOG" 30 90
+    echo
+    [ ! -f "$container_log_file" ] && echo > /dev/null || rm -fv $container_log_file
+    echo
+    CONTAINERS_STATUS_ALL=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINERS_STATUS_ALL" 30 70
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS_ALL" 30 70
+    clear
+    cd $BDIR
+}
+function DOCKER_START_CONTAINER() {
+    CONTAINERS=$(docker container ls -a --format 'table {{.Names}}' | tail -n +2)
+    CONTAINERS_STATUS=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+    # docker container ls --format 'table {{.Names}} {{.Status}}'
+    if [[ -z $CONTAINERS ]]; then
+        # whiptail --title "NO DOCKER CONTAINERS" --msgbox "NO DOCKER CONTAINERS PRESENT OR RUNNING" 8 43
+        TERM=ansi whiptail --title "NO DOCKER CONTAINERS" --infobox "NO DOCKER CONTAINERS PRESENT" 8 43
+        sleep 3
+        clear
+        return
+    else
+        echo > /dev/null
+    fi
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINERS_STATUS" 30 70
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS" 30 70
+    if whiptail --title "DOCKER CONTAINER START" --yesno "Do you want ALL DOCKER CONTAINER START \n$CONTAINERS" 20 100; then
+        for CONTAINER in $CONTAINERS ; do docker start $CONTAINER;  done
+        sleep 1
+        CONTAINERS_STATUS_START_ALL=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+        whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS_START_ALL" 30 70
+        clear
+        return
+    else
+        echo /dev/null
+    fi
+    i=1
+    LIST_DOCKER_CONTAINERS=$(
+    for container_list in $CONTAINERS; do
+    echo "${i} ${container_list} OFF"
+    ((i++))
+    done
+    )
+    for container_list in $CONTAINERS; do
+        DOCKER_CONTAINER[${i}]="${container_list}"
+        ((i++))
+    done
+    # echo "$LIST_DOCKER_CONTAINERS"
+    CHOICES=$(whiptail --separate-output --checklist "Choose options" 30 60 15 \
+    `echo "$LIST_DOCKER_CONTAINERS"` 3>&1 1>&2 2>&3)
+    if [ -z "$CHOICES" ]; then
+       clear
+       return
+    else
+       echo "$CHOICES"
+    fi
+    sleep 2
+    # countdown5
+    # countdown 5
+    echo
+    cd $DIR
+    container_log_file="$DIR/container_log_file.log"
+    echo -n "" > $container_log_file
+    for CHOICE_NUMBER in $CHOICES
+    do
+        CONTAINER="${DOCKER_CONTAINER[${CHOICE_NUMBER}]}"
+        DOCKER_CONTAINERS=$(docker container ls -a --format 'table {{.Names}}' | tail -n +2 | grep ${CONTAINER}$)
+        if [[ "$CONTAINER" = "$DOCKER_CONTAINERS" ]]; then
+            echo "========================================="
+            echo "Run start Docker CONTAINER $CONTAINER"
+            echo "CONTAINER STARTED ==> $CONTAINER <== in the MENU " >> $container_log_file
+            docker start $CONTAINER
+            echo "========================================="
+        else
+            echo "NOT CONTAINER STARTED ==> $CONTAINER <== in the MENU " >> $container_log_file
+        fi
+    done
+    CONTAINER_LOG=$(cat $container_log_file)
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINER_LOG" 30 90
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINER_LOG" 30 90
+    echo
+    [ ! -f "$container_log_file" ] && echo > /dev/null || rm -fv $container_log_file
+    echo
+    CONTAINERS_STATUS_ALL=$(docker container ls -a --format 'table {{.Names}} {{.Status}}' | tail -n +2)
+    # TERM=ansi whiptail --title "DOCKER CONTAINER STATUS" --infobox "$CONTAINERS_STATUS_ALL" 30 70
+    whiptail --title "DOCKER CONTAINER STATUS" --scrolltext --msgbox "$CONTAINERS_STATUS_ALL" 30 70
+    clear
+    cd $BDIR
+}
+function DOCKER_VOLUMES_CONTENTS_DELETE() {
+    DOCKER_VOLUME_LS=$(docker volume ls --format '{{.Name}}')
+    if [[ -z $DOCKER_VOLUME_LS ]]; then
+        # whiptail --title "NO DOCKER VOLUMES" --msgbox "NO DOCKER VOLUMES PRESENT" 8 29
+        TERM=ansi whiptail --title "NO DOCKER VOLUMES" --infobox "NO DOCKER VOLUMES PRESENT" 8 29
+        sleep 3
+        clear
+        return
+    else
+        echo > /dev/null
+    fi
+    # TERM=ansi whiptail --title "DOCKER VOLUMES STATUS" --infobox "$DOCKER_VOLUME_LS" 30 70
+    whiptail --title "DOCKER VOLUMES STATUS" --scrolltext --msgbox "$DOCKER_VOLUME_LS" 30 70
+    if whiptail --title "DOCKER VOLUMES DELETE CONTENTS" --yesno "Do you want DELETE ALL DOCKER VOLUMES CONTENTS \n$DOCKER_VOLUME_LS" 30 70; then
+        cd $DIR
+        volume_delete_log_file="$DIR/volume_delete_log_file.log"
+        echo -n "" > $volume_delete_log_file
+        for VOLUME in $DOCKER_VOLUME_LS
+        do
+            if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
+                echo "Error: Failed to start busybox container"
+                echo "Error: Failed to start busybox container" >> $volume_delete_log_file
+            else
+                echo "Successfully delete ====================> $VOLUME <=="
+                echo "Successfully delete ====================> $VOLUME <==" >> $volume_delete_log_file
+            fi
+        done
+        VOLUME_DELETE_LOG=$(cat $volume_delete_log_file)
+        # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_DELETE_LOG" 40 115
+        whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_DELETE_LOG" 40 115
+        echo
+        [ ! -f "$volume_delete_log_file" ] && echo > /dev/null || rm -fv $volume_delete_log_file
+        echo
+        clear
+        cd $BDIR
+        return
+    else
+        echo /dev/null
+    fi
+    i=1
+    LIST_DOCKER_VOLUMES=$(
+    for volume_ls in $DOCKER_VOLUME_LS; do
+    echo "${i} ${volume_ls} OFF"
+    ((i++))
+    done
+    )
+    for volume_ls in $DOCKER_VOLUME_LS; do
+        DOCKER_VOLUMES[${i}]="${volume_ls}"
+        ((i++))
+    done
+    CHOICES=$(whiptail --title "DOCKER VOLUMES DELETE CONTENTS" --separate-output --checklist "Choose options" 35 90 15 \
+    `echo "$LIST_DOCKER_VOLUMES"` 3>&1 1>&2 2>&3)
+    if [ -z "$CHOICES" ]; then
+       clear
+       return
+    else
+       echo "$CHOICES"
+    fi
+    sleep 2
+    cd $DIR
+    volume_delete_log_file="$DIR/volume_delete_log_file.log"
+    echo -n "" > $volume_delete_log_file
+    for CHOICE_NUMBER in $CHOICES
+    do
+        VOLUME="${DOCKER_VOLUMES[${CHOICE_NUMBER}]}"
+        if ! docker run --rm -v "$VOLUME":/vackup-volume busybox sh -c 'rm -Rfv /vackup-volume/*'; then
+            echo "Error: Failed to start busybox container"
+            echo "Error: Failed to start busybox container" >> $volume_delete_log_file
+        else
+            echo "Successfully delete ====================> $VOLUME <=="
+            echo "Successfully delete ====================> $VOLUME <==" >> $volume_delete_log_file
+        fi
+    done
+    VOLUME_DELETE_LOG=$(cat $volume_delete_log_file)
+    # TERM=ansi whiptail --title "BACKUP VOLUMES STATUS" --infobox "$VOLUME_DELETE_LOG" 40 115
+    whiptail --title "BACKUP VOLUMES STATUS" --scrolltext --msgbox "$VOLUME_DELETE_LOG" 40 115
+    echo
+    [ ! -f "$volume_delete_log_file" ] && echo > /dev/null || rm -fv $volume_delete_log_file
+    echo
+    clear
+    cd $BDIR
+    return
+}
 function CTOP() {
     CTOP_ECHO=$(
     echo "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop"
@@ -796,51 +1035,60 @@ function HELP() {
 while [ true ];
 do
 CHOICE=$(
-whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 18 100 10 \
-    "[ 1 ]" "BACKUP VOLUMES FROM FILE LIST" \
-    "[ 2 ]" "BACKUP VOLUMES FROM MENU (docker volume ls)" \
-    "[ 3 ]" "LIST ALL VOLUMES BACKUP" \
-    "[ 4 ]" "RESTORE VOLUMES FROM FILE LIST" \
-    "[ 5 ]" "RESTORE VOLUMES FROM MENU" \
-    "[ 6 ]" "VOLUME LIST FILE" \
-    "[ 7 ]" "VOLUME CREATE LIST FILE FROM MENU" \
-    "[ c ]" "CTOP: Top-like interface for container" \
-    "[ h ]" "HELP OUTPUT" \
-    "[ e ]" "exit"  3>&1 1>&2 2>&3
+whiptail --title "DOCKER RESTORE MENU" --menu "Choose an option" 22 100 13 \
+    "[  1 ]" "BACKUP VOLUMES FROM FILE LIST" \
+    "[  2 ]" "BACKUP VOLUMES FROM MENU" \
+    "[  3 ]" "LIST ALL VOLUMES BACKUP" \
+    "[  4 ]" "RESTORE VOLUMES FROM FILE LIST" \
+    "[  5 ]" "RESTORE VOLUMES FROM MENU" \
+    "[  6 ]" "VOLUME LIST FILE" \
+    "[  7 ]" "VOLUME CREATE LIST FILE FROM MENU" \
+    "[  8 ]" "DOCKER STOP  CONTAINER" \
+    "[  9 ]" "DOCKER START CONTAINER" \
+    "[ 10 ]" "DOCKER VOLUMES CONTENTS DELETE" \
+    "[  c ]" "CTOP: Top-like interface for container" \
+    "[  h ]" "HELP OUTPUT" \
+    "[  e ]" "exit"  3>&1 1>&2 2>&3
 )
     # usage;
     case $CHOICE in
-        "[ 1 ]")
+        "[  1 ]")
             BACKUP_VOLUMES
             ;;
-        "[ 2 ]")
+        "[  2 ]")
             BACKUP_VOLUMES_MENU
             ;;
-        "[ 3 ]")
+        "[  3 ]")
             LIST_BACKUP_TREE
             ;;
-        "[ 4 ]")
+        "[  4 ]")
             RESTORE_BACKUP
             ;;
-        "[ 5 ]")
+        "[  5 ]")
             RESTORE_BACKUP_MENU
             ;;
-        "[ 6 ]")
+        "[  6 ]")
             VOLUME_LIST
             ;;
-        "[ 7 ]")
+        "[  7 ]")
             VOLUME_LIST_CREATE
             ;;
-        # "[ 8 ]")
-            # DELETE_BEFOR_RESTORE
-            # ;;
-        "[ c ]")
+        "[  8 ]")
+            DOCKER_STOP_CONTAINER
+            ;;
+        "[  9 ]")
+            DOCKER_START_CONTAINER
+            ;;
+        "[ 10 ]")
+            DOCKER_VOLUMES_CONTENTS_DELETE
+            ;;
+        "[  c ]")
             CTOP
             ;;
-        "[ h ]")
+        "[  h ]")
             HELP
             ;;
-        "[ e ]")
+        "[  e ]")
             EXIT
             clear
             exit 1
