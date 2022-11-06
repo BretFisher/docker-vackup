@@ -48,9 +48,32 @@ if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     exit 0
 fi
 
+detect_compression() {  # args: filename (de)compress-flag
+    [ -z ${VACKUP_COMPRESS:-} ] || return 0
+    case "$1" in
+        (*.tar)  VACKUP_COMPRESS=cat ;;
+        (*.gz)   VACKUP_COMPRESS=gzip ;;
+        (*.tgz)  VACKUP_COMPRESS=gzip ;;
+        (*.bz2)  VACKUP_COMPRESS=bzip2 ;;
+        (*.xz)   VACKUP_COMPRESS=xz ;;
+        (*.txz)  VACKUP_COMPRESS=xz ;;
+        (*)
+          echo "Error: unknown extension ${1##*.}"
+          exit 1
+          ;;
+    esac
+    [ "$VACKUP_COMPRESS" = cat ] || VACKUP_COMPRESS="$VACKUP_COMPRESS $2"
+}
+
 cmd_export() {
     VOLUME_NAME=$2
     FILE_NAME=$3
+
+    detect_compression "$FILE_NAME" -c
+    if [ "${VACKUP_COMPRESS%% *}" = xz ]; then
+        echo 'Error: .tar.xz export not supported'
+        exit 1
+    fi
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -70,10 +93,11 @@ cmd_export() {
 # unless we can translate full file paths
 
     if ! docker run --rm \
+      -e "FILE_NAME=$FILE_NAME" -e "VACKUP_COMPRESS=$VACKUP_COMPRESS" \
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
+      sh -c 'tar -cvf - /vackup-volume | $VACKUP_COMPRESS >/vackup/"$FILE_NAME"'
     then
         echo "Error: Failed to start busybox backup container"
         exit 1
@@ -85,6 +109,8 @@ cmd_export() {
 cmd_import() {
     FILE_NAME=$2
     VOLUME_NAME=$3
+
+    detect_compression "$FILE_NAME" -d
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -104,10 +130,11 @@ cmd_import() {
 # unless we can translate full file paths    
 
     if ! docker run --rm \
+      -e "FILE_NAME=$FILE_NAME" -e "VACKUP_COMPRESS=$VACKUP_COMPRESS" \
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -xvzf /vackup/"$FILE_NAME" -C /; 
+      sh -c '$VACKUP_COMPRESS </vackup/"$FILE_NAME" | tar >&2 -xvf - -C /'
     then
         echo "Error: Failed to start busybox container"
         exit 1
