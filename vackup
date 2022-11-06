@@ -34,7 +34,6 @@ vackup export VOLUME FILE
 
 vackup import FILE VOLUME
   Extract a tarball into a volume.
-  zstd decompression is not available.
 
 vackup save VOLUME IMAGE
   Copy volume contents to the /volume-data directory of a busybox image.
@@ -72,6 +71,8 @@ detect_compression() {  # args: filename (de)compress-flag
           msg 1 "Error: unknown extension ${1##*.}"
           ;;
     esac
+    command -v "$VACKUP_COMPRESS" >/dev/null ||
+      msg 1 "Error: $VACKUP_COMPRESS not available on host"
     [ "$VACKUP_COMPRESS" = cat ] || VACKUP_COMPRESS="$VACKUP_COMPRESS $2"
 }
 
@@ -85,8 +86,6 @@ cmd_export() {
     FILE_NAME=$3
 
     detect_compression "$FILE_NAME" -c
-    command -v "${VACKUP_COMPRESS%% *}" >/dev/null ||
-      msg 1 "Error: ${VACKUP_COMPRESS%% *} not available on host"
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
@@ -117,9 +116,6 @@ cmd_import() {
     VOLUME_NAME=$3
 
     detect_compression "$FILE_NAME" -d
-    if [ "${VACKUP_COMPRESS%% *}" = zstd ]; then
-        msg 1 'Error: zstd import not supported'
-    fi
 
     if [ ! -r "$FILE_NAME" ]; then
         msg 1 "Error: Cannot open \"$FILE_NAME\""
@@ -131,18 +127,11 @@ cmd_import() {
         docker volume create "$VOLUME_NAME"
     fi
 
-# TODO: check if file exists on host, if it does
-# create a option for overwrite and check if that's set
-# TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths
-
-    if ! docker run --rm \
-      -e "FILE_NAME=$FILE_NAME" -e "VACKUP_COMPRESS=$VACKUP_COMPRESS" \
+    set -- docker run --rm -i \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$(pwd)":/vackup \
       busybox \
-      sh -c '$VACKUP_COMPRESS </vackup/"$FILE_NAME" | tar >&2 -xvf - -C /'
-    then
+      tar -xvf - -C /
+    if ! $VACKUP_COMPRESS <"$FILE_NAME" | "$@" >&2; then
         msg 1 "Error: Failed to start busybox container"
     fi
 
