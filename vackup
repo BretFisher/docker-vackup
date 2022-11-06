@@ -49,8 +49,8 @@ if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 fi
 
 cmd_export() {
-    VOLUME_NAME="$2"
-    FILE_NAME="$3"
+    VOLUME_NAME=$2
+    FILE_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -83,8 +83,8 @@ cmd_export() {
 }
 
 cmd_import() {
-    FILE_NAME="$2"
-    VOLUME_NAME="$3"
+    FILE_NAME=$2
+    VOLUME_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -117,8 +117,8 @@ cmd_import() {
 }
 
 cmd_save() {
-    VOLUME_NAME="$2"
-    IMAGE_NAME="$3"
+    VOLUME_NAME=$2
+    IMAGE_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -151,8 +151,8 @@ cmd_save() {
 }
 
 cmd_load() {
-    IMAGE_NAME="$2"
-    VOLUME_NAME="$3"
+    IMAGE_NAME=$2
+    VOLUME_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -178,7 +178,7 @@ cmd_load() {
     echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
 }
 
-COMMAND="$1"
+COMMAND=$1
 case "$COMMAND" in
   export) cmd_export "$@" ;;
   import) cmd_import "$@" ;;
