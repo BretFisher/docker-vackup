@@ -43,6 +43,11 @@ vackup load IMAGE VOLUME
 EOF
 }
 
+msg() {  # args: exit_code msg
+    printf >&2 '%s\n' "$2"
+    return "$1"
+}
+
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
@@ -58,8 +63,7 @@ detect_compression() {  # args: filename (de)compress-flag
         (*.xz)   VACKUP_COMPRESS=xz ;;
         (*.txz)  VACKUP_COMPRESS=xz ;;
         (*)
-          echo "Error: unknown extension ${1##*.}"
-          exit 1
+          msg 1 "Error: unknown extension ${1##*.}"
           ;;
     esac
     [ "$VACKUP_COMPRESS" = cat ] || VACKUP_COMPRESS="$VACKUP_COMPRESS $2"
@@ -71,21 +75,17 @@ cmd_export() {
 
     detect_compression "$FILE_NAME" -c
     if [ "${VACKUP_COMPRESS%% *}" = xz ]; then
-        echo 'Error: .tar.xz export not supported'
-        exit 1
+        msg 1 'Error: .tar.xz export not supported'
     fi
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         usage
-        echo >&2
-        echo "Error: Not enough arguments"
-        exit 1
+        msg 1 "Error: Not enough arguments"
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
-        exit 1
+        msg 1 "Error: Volume $VOLUME_NAME does not exist"
     fi
 
 # TODO: check if file exists on host, if it does
@@ -100,11 +100,10 @@ cmd_export() {
       busybox \
       sh -c 'tar -cvf - /vackup-volume | $VACKUP_COMPRESS >/vackup/"$FILE_NAME"'
     then
-        echo "Error: Failed to start busybox backup container"
-        exit 1
+        msg 1 "Error: Failed to start busybox backup container"
     fi
 
-    echo "Successfully tar'ed volume $VOLUME_NAME into file $FILE_NAME"
+    msg 0 "Successfully tar'ed volume $VOLUME_NAME into file $FILE_NAME"
 }
 
 cmd_import() {
@@ -114,14 +113,13 @@ cmd_import() {
     detect_compression "$FILE_NAME" -d
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        echo "Error: Not enough arguments"
         usage
-        exit 1
+        msg 1 "Error: Not enough arguments"
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1;
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
+        msg 0 "Error: Volume $VOLUME_NAME does not exist"
         docker volume create "$VOLUME_NAME"
     fi
 
@@ -137,11 +135,10 @@ cmd_import() {
       busybox \
       sh -c '$VACKUP_COMPRESS </vackup/"$FILE_NAME" | tar >&2 -xvf - -C /'
     then
-        echo "Error: Failed to start busybox container"
-        exit 1
+        msg 1 "Error: Failed to start busybox container"
     fi
 
-    echo "Successfully unpacked $FILE_NAME into volume $VOLUME_NAME"
+    msg 0 "Successfully unpacked $FILE_NAME into volume $VOLUME_NAME"
 }
 
 cmd_save() {
@@ -149,15 +146,13 @@ cmd_save() {
     IMAGE_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        echo "Error: Not enough arguments"
         usage
-        exit 1
+        msg 1 "Error: Not enough arguments"
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
-        exit 1
+        msg 1 "Error: Volume $VOLUME_NAME does not exist"
     fi
 
     if ! docker run \
@@ -165,8 +160,7 @@ cmd_save() {
       busybox \
       cp -Rp /mount-volume/. /volume-data/;
     then
-        echo "Error: Failed to start busybox container"
-        exit 1
+        msg 1 "Error: Failed to start busybox container"
     fi
 
     CONTAINER_ID=$(docker ps -lq)
@@ -175,7 +169,7 @@ cmd_save() {
 
     docker container rm "$CONTAINER_ID"
 
-    echo "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
+    msg 0 "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
 }
 
 cmd_load() {
@@ -183,14 +177,13 @@ cmd_load() {
     VOLUME_NAME=$3
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        echo "Error: Not enough arguments"
         usage
-        exit 1
+        msg 1 "Error: Not enough arguments"
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
     then
-      echo "Volume $VOLUME_NAME does not exist, creating..."
+      msg 0 "Volume $VOLUME_NAME does not exist, creating..."
       docker volume create "$VOLUME_NAME"
     fi
 
@@ -199,11 +192,10 @@ cmd_load() {
       "$IMAGE_NAME" \
       cp -Rp /volume-data/. /mount-volume/; 
     then
-        echo "Error: Failed to start container from $IMAGE_NAME"
-        exit 1
+        msg 1 "Error: Failed to start container from $IMAGE_NAME"
     fi
 
-    echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
+    msg 0 "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
 }
 
 COMMAND=$1
