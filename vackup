@@ -117,6 +117,10 @@ cmd_import() {
         msg 1 "Error: Not enough arguments"
     fi
 
+    if [ ! -r "$FILE_NAME" ]; then
+        msg 1 "Error: Cannot open \"$FILE_NAME\""
+    fi
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" >/dev/null 2>&1
     then
         msg 0 "Error: Volume $VOLUME_NAME does not exist"
