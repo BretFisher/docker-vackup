@@ -51,13 +51,13 @@ fi
 cmd_export() {
     VOLUME_NAME="$2"
     FILE_NAME="$3"
-    
+
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
@@ -85,13 +85,13 @@ cmd_export() {
 cmd_import() {
     FILE_NAME="$2"
     VOLUME_NAME="$3"
-    
+
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
@@ -146,14 +146,14 @@ cmd_save() {
     docker commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
 
     docker container rm "$CONTAINER_ID"
-  
+
     echo "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
 }
 
 cmd_load() {
     IMAGE_NAME="$2"
     VOLUME_NAME="$3"
-    
+
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
@@ -165,7 +165,7 @@ cmd_load() {
       echo "Volume $VOLUME_NAME does not exist, creating..."
       docker volume create "$VOLUME_NAME"
     fi
-    
+
     if ! docker run --rm \
       -v "$VOLUME_NAME":/mount-volume \
       "$IMAGE_NAME" \
