@@ -266,7 +266,6 @@ function RESTORE_BACKUP() {
     done
     cat $volume_restor_log_file
     echo
-    
     [ ! -f "$volume_restor_log_file" ] && echo > /dev/null || rm -fv $volume_restor_log_file
     cd $BDIR
 }
