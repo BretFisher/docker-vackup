@@ -76,8 +76,9 @@ cmd_export() {
     fi
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        echo "Error: Not enough arguments"
         usage
+        echo >&2
+        echo "Error: Not enough arguments"
         exit 1
     fi
 
