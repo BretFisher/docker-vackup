@@ -214,7 +214,7 @@ function BACKUP_VOLUMES() {
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
-    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} \;
+    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} +
     clear
     echo
     cd $BDIR
@@ -295,7 +295,7 @@ function BACKUP_VOLUMES_MENU() {
     echo
     [ ! -f "$volume_log_file" ] && echo > /dev/null || rm -fv $volume_log_file
     echo
-    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} \;
+    find ${DIR}/backup-* -mtime +${ROTATE_DAYS} -exec rm -rvf {} +
     clear
     echo
     cd $BDIR
