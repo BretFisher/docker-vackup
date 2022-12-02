@@ -1002,13 +1002,13 @@ function CTOP() {
     CTOP_ECHO=$(
     echo "ctop: Top-like interface for container metrics https://github.com/bcicen/ctop"
     echo
-    echo "docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest"
+    echo "docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro alcapone1933/ctop:latest"
     echo
-    echo "Do you want to START Ctop"
+    echo "Do you want START CTOP"
     )
     if whiptail --title "CTOP" --yesno "$CTOP_ECHO" 20 120; then
         sleep 1
-        docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest
+        docker run --rm -ti --name=ctop --volume /var/run/docker.sock:/var/run/docker.sock:ro alcapone1933/ctop:latest
         sleep 1
     else
         return 0
