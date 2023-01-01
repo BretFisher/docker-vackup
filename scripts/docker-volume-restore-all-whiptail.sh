@@ -16,11 +16,11 @@ if [ -f "/usr/bin/whiptail" ]; then
     echo > /dev/null
 else
     echo
-    echo " Whiptail not installed"
-    echo " Install Whiptail"
-    echo " ==> sudo apt update && sudo apt install whiptail <== "
+    echo "Whiptail not installed"
+    echo "Install Whiptail"
+    echo "==> sudo apt update && sudo apt install whiptail <== "
     echo
-    echo " DO you want to install Whiptail for Debian / Mint / Ubuntu"
+    echo "DO you want to install Whiptail for Debian / Mint / Ubuntu"
     echo "========================================="
     echo "[ Y ] - INSTALL WHIPTAIL"
     echo "[ N ] - EXIT"
@@ -38,12 +38,12 @@ if [ -f "/usr/bin/tree" ]; then
     echo > /dev/null
 else
     echo
-    echo " Tree not installed"
-    echo " Install Tree"
-    echo " ==> sudo apt update && sudo apt install tree <== "
+    echo "Tree not installed"
+    echo "Install Tree"
+    echo "==> sudo apt update && sudo apt install tree <== "
     echo
     echo
-    echo " DO you want to install Tree for Debian / Mint / Ubuntu"
+    echo "DO you want to install Tree for Debian / Mint / Ubuntu"
     echo "========================================="
     echo "[ Y ] - INSTALL TREE"
     echo "[ N ] - EXIT"
@@ -80,7 +80,7 @@ else
     DIR_PATH=$(
     echo "BACKUP Directory is not exist."
     echo "Create a BACKUP Directory or change the variable DIR= "
-    echo " ==> mkdir -p $DIR <== "
+    echo "==> mkdir -p $DIR <== "
     echo "OR Change the Variable DIR= "
     echo
     echo "Do you want create Directory $DIR "
@@ -99,7 +99,7 @@ else
     BACKUP_VOLUMES_FILE=$(
     echo "BACKUP VOLUMES File is not exist."
     echo "Create a File of your DOCKER VOLUMES"
-    echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+    echo "==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
     echo
     echo "Do you want to create Directory $SCRIPT_DIR and the"
     echo "File $VOLUMES and save present volumes in  the FILE"
@@ -193,8 +193,8 @@ function BACKUP_VOLUMES() {
         DOCKER_VOLUME=$(docker volume ls  --format '{{.Name}}' | grep ${VOLUME}$)
         if [[ "$VOLUME" = "$DOCKER_VOLUME" ]]; then
             echo "========================================="
-            echo " Run backup for Docker volume $VOLUME "
-            echo " BACKED UP The VOLUME     ==> $VOLUME <== in the LIST " >> $volume_log_file
+            echo "Run backup for Docker volume $VOLUME "
+            echo "BACKED UP The VOLUME     ==> $VOLUME <== in the LIST " >> $volume_log_file
             $VACKUP export $VOLUME $VOLUME.tgz
             echo "========================================="
         else
@@ -452,7 +452,7 @@ function RESTORE_BACKUP() {
         for CONTAINER in $CONTAINERS
         do
             echo "========================================="
-            echo " docker stop ${CONTAINER}"
+            echo "docker stop ${CONTAINER}"
             docker stop ${CONTAINER}
             echo "========================================="
         done
@@ -478,7 +478,7 @@ function RESTORE_BACKUP() {
         for CONTAINER in $CONTAINERS
         do
             echo "========================================="
-            echo " docker stop ${CONTAINER}"
+            echo "docker stop ${CONTAINER}"
             docker stop ${CONTAINER}
             echo "========================================="
         done
@@ -504,7 +504,7 @@ function RESTORE_BACKUP() {
     for CONTAINER in $CONTAINERS
     do
         echo "========================================="
-        echo " docker start ${CONTAINER}"
+        echo "docker start ${CONTAINER}"
         docker start ${CONTAINER}
         echo "========================================="
     done
@@ -532,7 +532,7 @@ function DELETE_BEFOR_RESTORE() {
     for CONTAINER in $CONTAINERS
     do
         echo "========================================="
-        echo " docker stop ${CONTAINER}"
+        echo "docker stop ${CONTAINER}"
         docker stop ${CONTAINER}
         echo "========================================="
     done
@@ -632,7 +632,7 @@ function RESTORE_BACKUP_MENU() {
         for CONTAINER in $CONTAINERS
         do
             echo "========================================="
-            echo " docker stop ${CONTAINER}"
+            echo "docker stop ${CONTAINER}"
             docker stop ${CONTAINER}
             echo "========================================="
         done
@@ -660,7 +660,7 @@ function RESTORE_BACKUP_MENU() {
         for CONTAINER in $CONTAINERS
         do
             echo "========================================="
-            echo " docker stop ${CONTAINER}"
+            echo "docker stop ${CONTAINER}"
             docker stop ${CONTAINER}
             echo "========================================="
         done
@@ -687,7 +687,7 @@ function RESTORE_BACKUP_MENU() {
     for CONTAINER in $CONTAINERS
     do
         echo "========================================="
-        echo " docker start ${CONTAINER}"
+        echo "docker start ${CONTAINER}"
         docker start ${CONTAINER}
         echo "========================================="
     done
