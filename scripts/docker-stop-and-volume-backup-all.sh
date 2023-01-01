@@ -1,7 +1,6 @@
 #!/bin/bash
 # VOLUMES=$(docker volume ls  --format '{{.Name}}' > /opt/scripts/docker-volume-list.txt)
 # VOLUMES=$(docker volume ls  --format '{{.Name}}')
-# set -x
 BDIR="$PWD"
 DIR="/opt/backup-volume"
 SCRIPT_DIR="/opt/scripts"
@@ -17,38 +16,38 @@ if [ -f "$VACKUP" ]; then
     echo > /dev/null
 else
     echo
-    echo " vackup not installed"
-    echo " curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > $VACKUP && chmod +x $VACKUP"
+    echo "vackup not installed"
+    echo "curl -sSL https://raw.githubusercontent.com/alcapone1933/docker-vackup/master/vackup > $VACKUP && chmod +x $VACKUP"
     exit 1
 fi
 if [ -f "$VOLUMES" ]; then
     if [ -s $VOLUMES ]; then
         echo > /dev/null
     else
-        echo 
-        echo " BACKUP VOLUMES File is empty "
-        echo " Create a File of your DOCKER VOLUMES"
-        echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
+        echo
+        echo "BACKUP VOLUMES File is empty "
+        echo "Create a File of your DOCKER VOLUMES"
+        echo "==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
         echo
         exit 1
     fi
 else
-    echo 
-    echo " VOLUMES File does not exist . "
-    echo " Create a File of your DOCKER VOLUMES "
-    echo " ==> docker volume ls --format '{{.Name}}' > $VOLUMES <== "
-    echo " OR Change the Variable VOLUMES= "
+    echo
+    echo "VOLUMES File does not exist ."
+    echo "Create a File of your DOCKER VOLUMES"
+    echo "==> docker volume ls --format '{{.Name}}' > $VOLUMES <=="
+    echo "OR Change the Variable VOLUMES= "
     echo
     exit 1
 fi
 if [ -d "$DIR" ]; then
     echo > /dev/null
 else
-    echo 
-    echo " BACKUP Directory does not exist."
-    echo " Create a BACKUP Directory or change the variable DIR= "
-    echo " ==> mkdir -p $DIR <== "
-    echo " OR Change the Variable DIR= "
+    echo
+    echo "BACKUP Directory does not exist."
+    echo "Create a BACKUP Directory or change the variable DIR= "
+    echo "==> mkdir -p $DIR <== "
+    echo "OR Change the Variable DIR= "
     echo
     exit 1
 fi
@@ -75,13 +74,15 @@ do
         # Check if the container is running
         if [ "$container_status" == "running" ]; then
             echo "Container $CONTAINER_NAME is running"
+            echo "DOCKER       STOP ==> $CONTAINER_NAME <=="
             echo "DOCKER       STOP ==> $CONTAINER_NAME <==" >> $volume_log_file
             echo "DOCKER       STOP ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
             docker stop $CONTAINER_NAME
         else
-           echo "Container $CONTAINER_NAME is not running"
-           echo "DOCKER IS  STOPED ==> $CONTAINER_NAME <==" >> $volume_log_file
-           echo "DOCKER IS  STOPED ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
+            echo "Container $CONTAINER_NAME is not running"
+            echo "DOCKER IS  STOPED ==> $CONTAINER_NAME <=="
+            echo "DOCKER IS  STOPED ==> $CONTAINER_NAME <==" >> $volume_log_file
+            echo "DOCKER IS  STOPED ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
         fi
         done
     fi
@@ -125,13 +126,15 @@ do
         # Check if the container is running
         if [ "$container_status" == "running" ]; then
             echo "Container $CONTAINER_NAME is running"
+            echo "DOCKER IS STARTED ==> $CONTAINER_NAME <=="
             echo "DOCKER IS STARTED ==> $CONTAINER_NAME <==" >> $volume_log_file
             echo "DOCKER IS STARTED ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
         else
-           echo "Container $CONTAINER_NAME is not running"
-           echo "DOCKER       START ==> $CONTAINER_NAME <==" >> $volume_log_file
-           echo "DOCKER       START ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
-           docker start $CONTAINER_NAME
+            echo "Container $CONTAINER_NAME is not running"
+            echo "DOCKER      START ==> $CONTAINER_NAME <=="
+            echo "DOCKER      START ==> $CONTAINER_NAME <==" >> $volume_log_file
+            echo "DOCKER      START ==> $CONTAINER_NAME <==" >> $BACKUP_FILE_LOG
+            docker start $CONTAINER_NAME
         fi
         done
     fi
