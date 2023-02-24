@@ -8,19 +8,20 @@ VOLUMES="$SCRIPT_DIR/docker-volume-list.txt"
 VACKUP="/usr/local/bin/vackup"
 DATE=$(date +%Y-%m-%d--%H-%M-%S)
 ROTATE_DAYS="30"
-set -o errexit
-set -o errtrace
-set -o nounset
-set -Eeo pipefail
-if [ -f "/usr/bin/whiptail" ]; then
+#set -o errexit
+#set -o errtrace
+#set -o nounset
+#set -Eeo pipefail
+if command -v whiptail >/dev/null 2>&1; then
     echo > /dev/null
 else
-    echo
-    echo "Whiptail not installed"
-    echo "Install Whiptail"
-    echo "==> sudo apt update && sudo apt install whiptail <== "
-    echo
-    echo "DO you want to install Whiptail for Debian / Mint / Ubuntu"
+    echo ""
+    echo " Whiptail not installed"
+    echo " Install Whiptail"
+    echo " ==> sudo apt update && sudo apt install whiptail <== "
+    echo ""
+    echo ""
+    echo " DO you want to install Whiptail for Debian / Mint / Ubuntu"
     echo "========================================="
     echo "[ Y ] - INSTALL WHIPTAIL"
     echo "[ N ] - EXIT"
@@ -30,31 +31,31 @@ else
     if [[ "$value_whiptail" =~ (y|Y) ]]; then
         sudo apt update && apt install whiptail -yq
     else
-        echo
+        echo ""
         exit 1
     fi
 fi
-if [ -f "/usr/bin/tree" ]; then
+if command -v tree >/dev/null 2>&1; then
     echo > /dev/null
 else
-    echo
+    echo ""
     echo "Tree not installed"
     echo "Install Tree"
     echo "==> sudo apt update && sudo apt install tree <== "
-    echo
-    echo
+    echo ""
+    echo ""
     echo "DO you want to install Tree for Debian / Mint / Ubuntu"
     echo "========================================="
     echo "[ Y ] - INSTALL TREE"
     echo "[ N ] - EXIT"
     echo "========================================="
-    echo
+    echo ""
     read -n 1 -t 60 -p 'Enter your answer value: ' value_tree;
     echo
     if [[ "$value_tree" =~ (y|Y) ]]; then
         sudo apt update && apt install tree -yq
     else
-        echo
+        echo ""
         exit 1
     fi
 fi 
