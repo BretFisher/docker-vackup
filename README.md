@@ -1,4 +1,4 @@
-# Vackup: Backup and Restore Docker Volumes
+# Vump: Backup and Restore Docker Volumes and Database Dumps.
 
 [![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
 
