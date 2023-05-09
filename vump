@@ -19,7 +19,7 @@ if [[ "${DEBUG-0}" == "1" ]]; then set -o xtrace; fi          # DEBUG=1 will sho
 # ╭──────────────────────────────────────────────────────────╮
 # │                        VARIABLES                         │
 # ╰──────────────────────────────────────────────────────────╯
-
+DB_USERNAME="root"
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                      Trap Functions                      │
@@ -29,128 +29,161 @@ if [[ "${DEBUG-0}" == "1" ]]; then set -o xtrace; fi          # DEBUG=1 will sho
 trap "rm -f ./backup.sql" EXIT
 
 # ╭──────────────────────────────────────────────────────────╮
-# │                          Usage.                          │
+# │                     Menu Definitions                     │
 # ╰──────────────────────────────────────────────────────────╯
-
-usage()
+function menu_main()
 {
-    if [ "$#" -lt 2 ]; then
+    printf "Vump Tool\n\n"
+    printf "1. Export Volume contents to host tar.gz file\n"
+    printf "2. Import tar.gz file into a Volume\n"
+    printf "3. Save Volume data to a backup docker image\n"
+    printf "4. Load backup docker image into a Volume\n"
+    printf "5. Save MySQL Volume DB to a backup docker image\n"
+    printf "6. Load backup MySQL DB docker image into DB Volume\n"
+
+    printf "\n"
+    read -n 1 -p "Enter option (1-6) to continue" SELECTION; clear
+
+    case $SELECTION in
+
+        1)
+            cmd_export ;;
 
 
-        printf "🚚 Volume Dump\n\n"
-
-        printf "Docker Volume backup/recovery, import and export tool that includes MySQL databases.\n\n"
-
-        printf "export/import copies files between a host tarball and a volume. For making volume backups and restores.\n\n"
-        printf "save/load copies files from the volume into a container which then is made into a new image for commiting to registry.\n\n"
-        printf "dbsave/dbload creates a Mysqldump file from the database into a container and is then made into an image for the registry.\n\n"
-
-        cat <<EOF
-┌────────┐                 ┌────────────────────────┐ 
-│        │◀──── export ────│                        │ 
-│   ./   │                 │         volume         │ 
-│        │───── import ───▶│                        │ 
-└────────┘                 └────────────────────────┘ 
-                              │     │       ▲     ▲   
-                             save dbsave    │     │   
-                              │     │    dbload  load  
-                              ▼     ▼       │     │   
-                           ┌────────────────────────┐ 
-                           │   busybox container    │ 
-                           │      /volume-data      │ 
-                           └────────────────────────┘ 
-                                 │             ▲      
-                                 ▼             │      
-                           ┌────────────────────────┐ 
-                           │  Image  of container   │ 
-                           └────────────────────────┘ 
-EOF
-        printf "\n\n"
-
-        printf "Usage:\n\n"
-
-        printf " -e | --export <VOLUME> <FILE>\n"
-        printf "\tCreates a gzip'ed tarball in current directory from a volume.\n\n"
-
-        printf " -i | --import <FILE> <VOLUME>\n"
-        printf "\tExtracts a gzip'ed tarball into a volume.\n\n"
-
-        printf " -s | --save <VOLUME> <IMAGE>\n"
-        printf "\tCopies the volume contents to a busybox image in the /volume-data directory.\n\n"
-
-        printf " -l | --load <IMAGE> <VOLUME>\n"
-        printf "\tCopies /volume-data contents from an image to a volume.\n\n"
-
-        printf " -ds | --dbsave <VOLUME> <IMAGE> <DB_USERNAME> <DB_PASSWORD>\n"
-        printf "\tDatabase MySQLDump to a busybox image in the /volume-data directory.\n\n"
-
-        printf " -dl | --dbload <IMAGE> <VOLUME> <DB_USERNAME> <DB_PASSWORD>\n"
-        printf "\tCopies and loads /volume-data database file from an image to a volume.\n\n"
-
-        exit 1
-    fi
-}
+        2)
+            cmd_import ;;
 
 
-# ╭──────────────────────────────────────────────────────────╮
-# │         Take the arguments from the command line         │
-# ╰──────────────────────────────────────────────────────────╯
-function arguments()
-{
-    POSITIONAL_ARGS=()
-
-    case $1 in
-
-    
-        -e|--export)
-            cmd_export "$@"
-            ;;
+        3)
+            cmd_save ;;
 
 
-        -i|--import)
-            cmd_import "$@"
-            ;;
+        4)
+            cmd_load ;;
 
 
-        -s|--save)
-            cmd_save "$@"
-            ;;
+        5)
+            cmd_dbsave ;;
 
 
-        -l|--load)
-            cmd_load "$@"
-            ;;
-
-
-        -ds|--dbsave)
-            cmd_dbsave "$@"
-            ;;
-
-
-        -dl|--dbload)
-            cmd_dbload "$@"
-            ;;
-
-
-        -*|--*)
-            echo "Unknown option $1"
-            exit 1
-            ;;
+        6)
+            cmd_dbload ;;
 
 
         *)
-            POSITIONAL_ARGS+=("$1") # save positional arg back onto variable
-            shift                   # remove argument and shift past it.
+            echo "Unknown option $1"
+            menu_main
             ;;
+
     esac
 
 }
 
 
 # ╭──────────────────────────────────────────────────────────╮
+# │          Select a docker container from a list           │
+# ╰──────────────────────────────────────────────────────────╯
+function select_container()
+{
+    clear
+    printf "### %s\n\n" "$1"
+
+    printf "Select a Container\n"
+
+    LIST_OF_CONTAINERS=$(docker container ls -a --format='{{.ID}}\t{{.Names}}\t\t{{.Image}}')
+
+    LOOP=1
+    while IFS= read -r line; do
+        echo "$LOOP. $line"
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_CONTAINERS"
+
+    read -n 2 -p "$QUESTION" ANSWER
+
+    CONTAINER_LINE=$(sed -n ${ANSWER}p <<< "$LIST_OF_CONTAINERS")
+    CONTAINER=$(echo $CONTAINER_LINE  | head -n1 | cut -d " " -f2 | xargs )
+
+    echo $CONTAINER
+}
+
+# ╭──────────────────────────────────────────────────────────╮
+# │             Select a docker volume from list             │
+# ╰──────────────────────────────────────────────────────────╯
+function select_volume()
+{
+    clear
+    printf "### %s\n\n" "$1"
+
+    printf "Select a Volume\n"
+
+    LIST_OF_VOLUMES=$(docker volume ls --format='{{lower .Name}}')
+
+    LOOP=1
+    while IFS= read -r line; do
+        echo "$LOOP. $line"
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_VOLUMES"
+
+    read -n 2 -p "$QUESTION" ANSWER
+
+    VOLUME_LINE=$(sed -n ${ANSWER}p <<< "$LIST_OF_VOLUMES")
+    VOLUME=$(echo $VOLUME_LINE  | head -n1 | cut -d " " -f1 )
+
+    echo $VOLUME
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │              Select a docker image for list              │
+# ╰──────────────────────────────────────────────────────────╯
+function select_image()
+{
+    clear
+    printf "### %s\n\n" "$1"
+
+    printf "Select an Image\n"
+
+    LIST_OF_IMAGES=$(docker image ls --format='{{lower .ID}}\t{{lower .Repository}}')
+
+    LOOP=1
+    while IFS= read -r line; do
+        echo "$LOOP. $line"
+        LOOP=$(( LOOP+1 ))
+    done <<< "$LIST_OF_IMAGES"
+
+    read -n 2 -p "$QUESTION" ANSWER
+
+    IMAGE_LINE=$(sed -n ${ANSWER}p <<< "$LIST_OF_IMAGES")
+    IMAGE=$(echo $IMAGE_LINE  | head -n1 | cut -d " " -f1 )
+
+    echo $IMAGE
+
+}
+
+
+# ╭──────────────────────────────────────────────────────────╮
+# │                      Ask a question                      │
+# ╰──────────────────────────────────────────────────────────╯
+function ask_question()
+{
+    clear
+    printf "### \n\n "
+
+    QUESTION=$1
+
+    read -p "$QUESTION" ANSWER
+
+    echo $ANSWER
+}
+
+
+
+# ╭──────────────────────────────────────────────────────────╮
 # │                          EXPORT                          │
 # ╰──────────────────────────────────────────────────────────╯
 #
+# Copy files from a volume into a tar.gz file on the host.
+# 
 # 1. Create a BUSYBOX container
 # 2. mount volume to    /vackup-volume
 # 3. mount $pwd to      /vackup
@@ -168,9 +201,16 @@ function arguments()
 #                                └──────────────────────┘
 function cmd_export() {
 
-    VOLUME_NAME="$2"
-    FILE_NAME="$3"
+    select_volume "Select volume to EXPORT from"
+    VOLUME_NAME="$VOLUME"
+    ask_question "Filename to export to? "
+    FILE_NAME="$ANSWER"
     
+    # Add tar.gz on the end.
+    if [[ ! $FILE_NAME == *.tar.gz ]]; then
+        FILE_NAME="$FILE_NAME.tar.gz"
+    fi
+
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -195,7 +235,7 @@ function cmd_export() {
         -v "$VOLUME_NAME":/vackup-volume \
         -v "$(pwd)":/vackup \
         busybox \
-        tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
+        tar -zcvf /vackup/"$FILE_NAME" /vackup-volume > /dev/null 2>&1;
     then
         echo "Error: Failed to start busybox backup container"
         exit 1
@@ -209,6 +249,8 @@ function cmd_export() {
 # ╭──────────────────────────────────────────────────────────╮
 # │                          IMPORT                          │
 # ╰──────────────────────────────────────────────────────────╯
+# 
+# Loads the contents of a backup tar.gz into a Volume.
 #
 # 1. Create a BUSYBOX container
 # 2. mount volume to    /vackup-volume
@@ -228,8 +270,12 @@ function cmd_export() {
 #                                └──────────────────────┘
 #
 function cmd_import() {
-    FILE_NAME="$2"
-    VOLUME_NAME="$3"
+
+    ask_question "Filename to import from? "
+    FILE_NAME="$ANSWER"
+
+    select_volume "Select Volume to IMPORT into."
+    VOLUME_NAME="$VOLUME"
     
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
@@ -268,6 +314,8 @@ function cmd_import() {
 # │                           SAVE                           │
 # ╰──────────────────────────────────────────────────────────╯
 #
+# Save contents of a volume to a container image.
+#
 # 1. Mount volume to busybox
 # 2. Copy contents to /volume-data/
 # 3. Make an image of the container
@@ -291,8 +339,12 @@ function cmd_import() {
 #                               └──────────────────────┘
 #
 function cmd_save() {
-    VOLUME_NAME="$2"
-    IMAGE_NAME="$3"
+
+    select_volume "Select Volume to save into a backup image."
+    VOLUME_NAME="$VOLUME"
+
+    ask_question "Name to give backup image? "
+    IMAGE_NAME="$ANSWER"
 
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
@@ -335,6 +387,8 @@ function cmd_save() {
 # │                           LOAD                           │
 # ╰──────────────────────────────────────────────────────────╯
 #
+# Load contents of a container image into a Volume.
+#
 # 1. Create container of image
 # 2. Mount volume to /mount-volume
 # 3. Copy everything in /volume-data to /mount-volume
@@ -357,8 +411,12 @@ function cmd_save() {
 #                               └──────────────────────┘
 #
 cmd_load() {
-    IMAGE_NAME="$2"
-    VOLUME_NAME="$3"
+
+    select_image "Select backup image to load data from."
+    IMAGE_NAME="$IMAGE"
+
+    select_volume "Select volume to load data into."
+    VOLUME_NAME="$VOLUME"
     
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
@@ -391,6 +449,8 @@ cmd_load() {
 # ╭──────────────────────────────────────────────────────────╮
 # │                          DBSAVE                          │
 # ╰──────────────────────────────────────────────────────────╯
+#
+# Extracts the database from a Volume and creates a backup image
 #
 # 1. Run DB Container (with DB volume mounted)
 # 2. MySQLDump database to current folder
@@ -428,11 +488,24 @@ cmd_load() {
 #                                  └──────────────────────┘  
 #
 function cmd_dbsave() {
-    CONTAINER="$2"
-    IMAGE_NAME="$3"
-    DB_DATABASE="$4"
-    DB_PASSWORD="$5"
-    DB_USERNAME="root"
+
+    select_container "Select MySQL Container to backup."
+    CONTAINER="$CONTAINER"
+
+    ask_question "Name to give backup image? "
+    IMAGE_NAME="$ANSWER"
+
+    ask_question "Name of database to backup? "
+    DB_DATABASE="$ANSWER"
+
+    ask_question "$DB_USERNAME database password? "
+    DB_PASSWORD="$ANSWER"
+
+    printf "CONTAINER: %s\n" "$CONTAINER"
+    printf "IMAGE_NAME: %s\n" "$IMAGE_NAME"
+    printf "DB_DATABASE: %s\n" "$DB_DATABASE"
+    printf "DB_USERNAME: %s\n" "$DB_USERNAME"
+    printf "DB_PASSWORD: %s\n" "$DB_PASSWORD"
 
     # Check parameters are set
     if [ -z "$CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
@@ -458,7 +531,7 @@ function cmd_dbsave() {
 
     # Dump Database to /tmp
     if ! docker exec $CONTAINER \
-        mysqldump -u$DB_USERNAME -p$DB_PASSWORD --single-transaction $DB_DATABASE > /tmp/backup.sql > /dev/null 2>&1;
+        /bin/sh -c "mysqldump -u$DB_USERNAME -p$DB_PASSWORD -v --single-transaction $DB_DATABASE > /tmp/backup.sql";
     then
         echo "Error: Failed to dump database to /tmp/backup.sql"
         exit 1
@@ -498,6 +571,8 @@ function cmd_dbsave() {
 # │                          DBLOAD                          │
 # ╰──────────────────────────────────────────────────────────╯
 #
+# Loads a database from a backup image into a Volume.
+#
 # 1. Download DB data image
 # 2. Copy the backup file out of image
 # 3. Copy backup file into target container
@@ -532,12 +607,25 @@ function cmd_dbsave() {
 #                                 └─────────────────────────┘
 #
 cmd_dbload() {
-    IMAGE_NAME="$2"
-    TARGET_CONTAINER="$3"
-    DB_DATABASE="$4"
-    DB_PASSWORD="$5"
-    DB_USERNAME="root"
-    
+
+    select_image "Select database image to load data from. "
+    IMAGE_NAME="$IMAGE"
+
+    select_container "Select MySQL container to load data into. "
+    TARGET_CONTAINER="$CONTAINER"
+
+    ask_question "Name of database to load? "
+    DB_DATABASE="$ANSWER"
+
+    ask_question "$DB_USERNAME database password? "
+    DB_PASSWORD="$ANSWER"
+
+    printf "CONTAINER: %s\n" "$CONTAINER"
+    printf "IMAGE_NAME: %s\n" "$IMAGE_NAME"
+    printf "DB_DATABASE: %s\n" "$DB_DATABASE"
+    printf "DB_USERNAME: %s\n" "$DB_USERNAME"
+    printf "DB_PASSWORD: %s\n" "$DB_PASSWORD"
+
     # Check parameters are set
     if [ -z "$TARGET_CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
         echo "Error: Not enough arguments"
@@ -573,5 +661,11 @@ cmd_dbload() {
 }
 
 
-usage "$@"
-arguments "$@"
+function mainmenu()
+{
+    clear
+    menu_main 
+}
+
+
+mainmenu "$@"
