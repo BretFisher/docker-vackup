@@ -264,12 +264,12 @@ function select_image()
 function select_database()
 {
     
-    LIST_OF_DATABASES=$(docker exec db mysql -u$DB_USERNAME -p$DB_PASSWORD --silent --execute="show databases;")
+    LIST_OF_DATABASES=$(docker exec $CONTAINER mysql -u$DB_USERNAME -p$DB_PASSWORD --silent --execute="show databases;" )
 
     MENU='
         {
         "select": {
-            "heading": "'${BORDER_YELLOW_400}'Select the container.",
+            "heading": "'${BORDER_YELLOW_400}'Select the database.",
             "clear": true,
             "clear_before_command": true,
             "icon": "ICON_FADE_200",
@@ -713,7 +713,6 @@ function cmd_dbsave() {
     DB_PASSWORD="$ANSWER"
 
     select_database "Select database to backup. "
-    # ask_question "Name of database to backup? "
     DB_DATABASE="$DB_DATABASE"
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
