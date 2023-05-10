@@ -82,7 +82,7 @@ function mainmenu()
                     "title_style": "",
                     "description": "Export data out of docker.",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "save_option",
+                    "command": "save_option; exit",
                     "bullet": "BORDER_SKY_400"
                 },
                 {
@@ -90,7 +90,7 @@ function mainmenu()
                     "title_style": "",
                     "description": "Import data back into docker.",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "load_option",
+                    "command": "load_option; exit",
                     "bullet": "BORDER_EMERALD_400"
                 }
             ]
@@ -120,7 +120,7 @@ function save_option()
                     "title_style": "",
                     "description": "Export contents of a docker volume into a tar.gz file in current directory on host.",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_export",
+                    "command": "cmd_export; exit",
                     "bullet": "BORDER_SKY_400"
                 },
                 {
@@ -128,7 +128,7 @@ function save_option()
                     "title_style": "",
                     "description": "Save contents of a docker volume into a docker container image ready to push to registry",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_save",
+                    "command": "cmd_save; exit",
                     "bullet": "BORDER_PINK_400"
                 },
                 {
@@ -136,7 +136,7 @@ function save_option()
                     "title_style": "",
                     "description": "Save MySQL dump on container to a backup image",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_dbsave",
+                    "command": "cmd_dbsave; exit",
                     "bullet": "BORDER_FUCHSIA_400"
                 },
                 {
@@ -144,7 +144,7 @@ function save_option()
                     "title_style": "",
                     "description": "Save MySQL dump to push to container registry",
                     "description_style": "TEXT_GRAY_500",
-                    "command": "cmd_dbsave; push_to_registry;",
+                    "command": "cmd_dbsave; push_to_registry; exit",
                     "bullet": "BORDER_FUCHSIA_400"
                 }
             ]
