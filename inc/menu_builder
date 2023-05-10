@@ -1,0 +1,500 @@
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                             START - JSON MENU CODE                           ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+function getkey {
+    KEYSTRING=$(sed -e 's/\[/\"\,/g' -e 's/^\"\,/\[/g' -e 's/\]\./\,\"/g' -e 's/\./\"\,\"/g' -e '/^\[/! s/^/\[\"/g' -e '/\]$/! s/$/\"\]/g' <<< "$@")
+    FOUT=$(grep -F "$KEYSTRING" <<< "$JSON_PARSED")
+    FOUT="${FOUT#*$'\t'}"
+    FOUT="${FOUT#*\"}"
+    FOUT="${FOUT%\"*}"
+    echo "$FOUT"
+}
+
+function getarrlen {
+    KEYSTRING=$(sed -e '/^\[/! s/\[/\"\,/g' -e 's/\]\./\,\"/g' -e 's/\./\"\,\"/g' -e '#^$#! {/^\[/! s/^/\[\"/g}' -e '/^$/! s/$/\"\,/g' -e 's/\[/\\\[/g' -e 's/\]/\\\]/g' -e 's/\,/\\\,/g' -e '/^$/ s/^/\\\[/g' <<< "$@")
+    LEN=$(grep -o "${KEYSTRING}[0-9]*" <<< "$JSON_PARSED" | tail -n -1 | grep -o "[0-9]*$")
+    if [ -n "$LEN" ]; then
+        LEN=$(($LEN+1))
+    else
+        LEN="0"
+    fi
+    echo "$LEN"
+}
+
+
+function parse_classes()
+{
+    PREFIX=$1
+
+    CLASSES=$2
+    export IFS=" "
+    for CLASS in $CLASSES; do
+
+        IFS="_" read PARAMETER PRIMARY SECONDARY <<< "$CLASS"
+
+        if  [[ $PARAMETER == 'TEXT' ]] || 
+            [[ $PARAMETER == 'BG' ]] || 
+            [[ $PARAMETER == 'BORDER' ]]; then
+            export declare "${PREFIX}_${PARAMETER}_COLOUR"=${!CLASS}
+        fi
+        if  [[ $PARAMETER == PX* ]] || 
+            [[ $PARAMETER == PY* ]] || 
+            [[ $PARAMETER == PT* ]] || 
+            [[ $PARAMETER == PR* ]] || 
+            [[ $PARAMETER == PB* ]] || 
+            [[ $PARAMETER == PL* ]]; then
+
+            export declare "${PREFIX}_$PARAMETER"=${!CLASS}
+        fi 
+        if  [[ $PARAMETER == EDGE* ]] && [[ $SECONDARY == "" ]] ; then
+            VAR="${PARAMETER}_${PRIMARY}_TL"; export declare "${PREFIX}_${PARAMETER}_TL"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_T";  export declare "${PREFIX}_${PARAMETER}_T"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_TR"; export declare "${PREFIX}_${PARAMETER}_TR"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_R";  export declare "${PREFIX}_${PARAMETER}_R"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_BR"; export declare "${PREFIX}_${PARAMETER}_BR"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_B";  export declare "${PREFIX}_${PARAMETER}_B"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_BL"; export declare "${PREFIX}_${PARAMETER}_BL"=${!VAR}
+            VAR="${PARAMETER}_${PRIMARY}_L";  export declare "${PREFIX}_${PARAMETER}_L"=${!VAR}
+        fi 
+        if [[ $PARAMETER == EDGE* ]] && ! [[ $SECONDARY == "" ]] ; then
+            VAR="${CLASS}"; export declare "${PREFIX}_${PARAMETER}_${SECONDARY}"=${!VAR}
+        fi
+        if  [[ $PARAMETER == 'W' ]]; then
+            export declare "${PREFIX}_${PARAMETER}"=${!CLASS}
+        fi    
+        
+        if  [[ $PARAMETER == 'H' ]]; then
+            export declare "${PREFIX}_${PARAMETER}"=${!CLASS}
+        fi
+        if  [[ $PARAMETER == 'ALIGN' ]]; then
+            export declare "${PREFIX}_${PARAMETER}"=${!CLASS}
+        fi
+
+    done
+}
+
+
+function select_option {
+    
+    HEIGHT=3
+    FOOTER_HEIGHT=2
+
+    ESC=$( printf "\033")                                                               
+    cursor_blink_on()  { printf "$ESC[?25h"; }                                          
+    cursor_blink_off() { printf "$ESC[?25l"; }                                          
+    cursor_to()        { printf "$ESC[$1;${2:-1}H"; }                                   
+    
+    ref_to_content()   {
+        VARNAME=$1
+        REFERENCE=${!VARNAME}
+        echo "${REFERENCE}"
+    }
+
+    ref_to_ref_to_content()   {
+        VARNAME=$1
+        REFERENCE=${!VARNAME}
+        OUTPUT=${!REFERENCE}
+        echo "${OUTPUT}"
+    }
+
+    print_option()     {                                                                
+        TEXT=$1
+        LOOP_INDEX=$2
+
+        TITLE=$( ref_to_content "SELECT_ARRAY_TITLE_${LOOP_INDEX}" )
+        TITLE_STYLE=$(ref_to_ref_to_content "SELECT_ARRAY_TITLE_STYLE_${LOOP_INDEX}")
+        DESCRIPTION=$(ref_to_content "SELECT_ARRAY_DESCRIPTION_${LOOP_INDEX}")
+        DESCRIPTION_STYLE=$(ref_to_ref_to_content "SELECT_ARRAY_DESCRIPTION_STYLE_${LOOP_INDEX}")
+
+        TITLE=$(eval "printf \"${TITLE}\"")
+        DESCRIPTION=$(eval "printf \"${DESCRIPTION}\"")
+
+        OPTION_TEXT=''
+        OPTION_TEXT+="  "
+        OPTION_TEXT+="${TITLE_STYLE}"
+        OPTION_TEXT+="${TITLE}\n"
+        OPTION_TEXT+="${RESET_TEXT}"
+        OPTION_TEXT+="  "
+        OPTION_TEXT+="${DESCRIPTION_STYLE}"
+        OPTION_TEXT+="${DESCRIPTION}"
+        OPTION_TEXT+="${RESET_ALL}"
+
+        printf "$OPTION_TEXT"; 
+    }               
+
+    invert_selected()  {                                                                
+        TEXT=$1
+        LOOP_INDEX=$2
+
+        TITLE=$( ref_to_content "SELECT_ARRAY_TITLE_${LOOP_INDEX}" )
+        TITLE_STYLE=$(ref_to_ref_to_content "SELECT_ARRAY_TITLE_STYLE_${LOOP_INDEX}")
+        DESCRIPTION=$(ref_to_content "SELECT_ARRAY_DESCRIPTION_${LOOP_INDEX}")
+        DESCRIPTION_STYLE=$(ref_to_ref_to_content "SELECT_ARRAY_DESCRIPTION_STYLE_${LOOP_INDEX}")
+        SIDEBAR_STYLE=$(ref_to_ref_to_content "SELECT_ARRAY_SIDEBAR_STYLE_${LOOP_INDEX}")
+        SIDEBAR_ICON=$(ref_to_content "$SELECT_ARRAY_SIDEBAR_ICON")
+
+        TITLE=$(eval "printf \"${TITLE}\"")
+        DESCRIPTION=$(eval "printf \"${DESCRIPTION}\"")
+
+        OPTION_TEXT=''
+        OPTION_TEXT+="${SIDEBAR_STYLE}"
+        OPTION_TEXT+="${SIDEBAR_ICON} "
+        OPTION_TEXT+="${TITLE_STYLE}"
+        OPTION_TEXT+="${TITLE}\n"
+        OPTION_TEXT+="${RESET_TEXT}"
+        OPTION_TEXT+="${SIDEBAR_STYLE}"
+        OPTION_TEXT+="${SIDEBAR_ICON} "
+        OPTION_TEXT+="${DESCRIPTION_STYLE}"
+        OPTION_TEXT+="${DESCRIPTION}"
+        OPTION_TEXT+="${RESET_ALL}"
+
+        printf "$OPTION_TEXT"; 
+
+    }                                  
+
+    get_terminal_height()   {                                                           
+        IFS=';'                                                                         
+        read -sdR -p $'\E[6n' ROW COL;                                                  
+        echo ${ROW#*[};                                                                 
+    }             
+
+    key_input()        
+    { 
+        read -s -n3 key 2>/dev/null >&2  
+        if [[ $key = $ESC[A ]]; then echo up;    fi                 
+        if [[ $key = $ESC[B ]]; then echo down;  fi    
+        if [[ $key = $ESC[C ]]; then echo right;    fi                 
+        if [[ $key = $ESC[D ]]; then echo left;  fi              
+        if [[ $key = ""     ]]; then echo enter; fi; 
+    }              
+
+    NEWLINE_COUNT=$(( ( $# * $HEIGHT ) ))
+    for (( c=1; c<=$NEWLINE_COUNT; c++)) ; do printf "\n" ; done
+
+    local lastrow=$(get_terminal_height)                                               
+    TOTAL_LINES=$(( $# * $HEIGHT ))                                                     
+    local STARTING_ROW=$(( $lastrow - $TOTAL_LINES ))                                  
+    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2                              
+    cursor_blink_off                                                                    
+
+    local selected=0                                                                    
+    while true; do                                                                     
+
+            local LINE_OFFSET=0                                                               
+
+            for opt; do                                                                       
+
+                cursor_to $(( $STARTING_ROW + $LINE_OFFSET )) 0                               
+
+                if [ $LINE_OFFSET -eq $(( $selected * $HEIGHT)) ]; then                       
+                    invert_selected "$opt" "$selected"                                        
+                else
+                    INDEX=$(( $LINE_OFFSET / $HEIGHT ))
+                    print_option "$opt" "$INDEX"                                              
+                fi
+                (( LINE_OFFSET = LINE_OFFSET + $HEIGHT  ))                                    
+            done
+
+            case `key_input` in                                                               
+                enter) break;;                                                                
+
+                up)    ((selected = selected - 1)); 
+                    if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;                   
+
+                down)  ((selected = selected + 1));                                           
+                    if [ $selected -ge $# ]; then selected=0; fi;;    
+
+                left) 
+                    $PREVIOUS_STEP
+                    ;;    
+
+                right) 
+                    exit 0
+                    ;;  
+
+            esac
+
+    done
+
+    cursor_to $lastrow                                                                        
+    printf "\n"
+    cursor_blink_on
+
+    return $selected
+}
+
+
+
+function parse_json()
+{
+
+    throw() {
+        echo "$*" >&2
+        exit 1
+    }
+
+    BRIEF=0
+    LEAFONLY=0
+    PRUNE=0
+    NO_HEAD=0
+    NORMALIZE_SOLIDUS=0
+
+    parse_options() {
+
+        set -- "$@"
+        local ARGN=$#
+        while [ "$ARGN" -ne 0 ]
+        do
+        case $1 in
+            -b) BRIEF=1
+                LEAFONLY=1
+                PRUNE=1
+            ;;
+            -l) LEAFONLY=1
+            ;;
+            -p) PRUNE=1
+            ;;
+            -n) NO_HEAD=1
+            ;;
+            -s) NORMALIZE_SOLIDUS=1
+            ;;
+            ?*) echo "ERROR: Unknown option."
+                exit 0
+            ;;
+        esac
+        shift 1
+        ARGN=$((ARGN-1))
+        done
+    }
+
+    awk_egrep () {
+        local pattern_string=$1
+
+        gawk '{
+        while ($0) {
+            start=match($0, pattern);
+            token=substr($0, start, RLENGTH);
+            print token;
+            $0=substr($0, start+RLENGTH);
+        }
+        }' pattern="$pattern_string"
+    }
+
+    tokenize () {
+        local GREP
+        local ESCAPE
+        local CHAR
+
+        if echo "test string" | egrep -ao --color=never "test" >/dev/null 2>&1
+        then
+        GREP='egrep -ao --color=never'
+        else
+        GREP='egrep -ao'
+        fi
+
+        if echo "test string" | egrep -o "test" >/dev/null 2>&1
+        then
+        ESCAPE='(\\[^u[:cntrl:]]|\\u[0-9a-fA-F]{4})'
+        CHAR='[^[:cntrl:]"\\]'
+        else
+        GREP=awk_egrep
+        ESCAPE='(\\\\[^u[:cntrl:]]|\\u[0-9a-fA-F]{4})'
+        CHAR='[^[:cntrl:]"\\\\]'
+        fi
+
+        local STRING="\"$CHAR*($ESCAPE$CHAR*)*\""
+        local NUMBER='-?(0|[1-9][0-9]*)([.][0-9]*)?([eE][+-]?[0-9]*)?'
+        local KEYWORD='null|false|true'
+        local SPACE='[[:space:]]+'
+
+        local is_wordsplit_disabled=$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')
+        if [ $is_wordsplit_disabled != 0 ]; then setopt shwordsplit; fi
+        $GREP "$STRING|$NUMBER|$KEYWORD|$SPACE|." | egrep -v "^$SPACE$"
+        if [ $is_wordsplit_disabled != 0 ]; then unsetopt shwordsplit; fi
+    }
+
+    parse_array () {
+        local index=0
+        local ary=''
+        read -r token
+        case "$token" in
+        ']') ;;
+        *)
+            while :
+            do
+            parse_value "$1" "$index"
+            index=$((index+1))
+            ary="$ary""$value" 
+            read -r token
+            case "$token" in
+                ']') break ;;
+                ',') ary="$ary," ;;
+                *) throw "EXPECTED , or ] GOT ${token:-EOF}" ;;
+            esac
+            read -r token
+            done
+            ;;
+        esac
+        [ "$BRIEF" -eq 0 ] && value=$(printf '[%s]' "$ary") || value=
+        :
+    }
+
+    parse_object () {
+        local key
+        local obj=''
+        read -r token
+        case "$token" in
+        '}') ;;
+        *)
+            while :
+            do
+            case "$token" in
+                '"'*'"') key=$token ;;
+                *) throw "EXPECTED string GOT ${token:-EOF}" ;;
+            esac
+            read -r token
+            case "$token" in
+                ':') ;;
+                *) throw "EXPECTED : GOT ${token:-EOF}" ;;
+            esac
+            read -r token
+            parse_value "$1" "$key"
+            obj="$obj$key:$value"        
+            read -r token
+            case "$token" in
+                '}') break ;;
+                ',') obj="$obj," ;;
+                *) throw "EXPECTED , or } GOT ${token:-EOF}" ;;
+            esac
+            read -r token
+            done
+        ;;
+        esac
+        [ "$BRIEF" -eq 0 ] && value=$(printf '{%s}' "$obj") || value=
+        :
+    }
+
+    parse_value () {
+        local jpath="${1:+$1,}$2" isleaf=0 isempty=0 print=0
+        case "$token" in
+        '{') parse_object "$jpath" ;;
+        '[') parse_array  "$jpath" ;;
+        ''|[!0-9]) throw "EXPECTED value GOT ${token:-EOF}" ;;
+        *) value=$token
+            [ "$NORMALIZE_SOLIDUS" -eq 1 ] && value=$(echo "$value" | sed 's#\\/#/#g')
+            isleaf=1
+            [ "$value" = '""' ] && isempty=1
+            ;;
+        esac
+        [ "$value" = '' ] && return
+        [ "$NO_HEAD" -eq 1 ] && [ -z "$jpath" ] && return
+
+        [ "$LEAFONLY" -eq 0 ] && [ "$PRUNE" -eq 0 ] && print=1
+        [ "$LEAFONLY" -eq 1 ] && [ "$isleaf" -eq 1 ] && [ $PRUNE -eq 0 ] && print=1
+        [ "$LEAFONLY" -eq 0 ] && [ "$PRUNE" -eq 1 ] && [ "$isempty" -eq 0 ] && print=1
+        [ "$LEAFONLY" -eq 1 ] && [ "$isleaf" -eq 1 ] && \
+        [ $PRUNE -eq 1 ] && [ $isempty -eq 0 ] && print=1
+        [ "$print" -eq 1 ] && printf "[%s]\t%s\n" "$jpath" "$value"
+        :
+    }
+
+    parse () {
+        read -r token
+        parse_value
+        read -r token
+        case "$token" in
+        '') ;;
+        *) throw "EXPECTED EOF GOT $token" ;;
+        esac
+    }
+
+        parse_options "$@"
+        tokenize | parse
+
+}
+
+
+function menu(){
+
+    CONFIG_FILE=$1
+    JSON_PARSED=$(echo $MENU | parse_json -l)
+    JSON_SELECT_LENGTH=$(getarrlen select.options)
+    HEADING=$(getkey select.heading)
+    CLEAR_SCREEN=$(getkey select.clear)
+    CLEAR_BEFORE_COMMAND_SCREEN=$(getkey select.clear_before_command)
+    declare SELECT_ARRAY_SIDEBAR_ICON=$(getkey select.icon)
+    HIDE_MESSAGE=$(getkey select.hide_message)
+    DISPLAY_HELP=$(getkey select.display_help)
+    RESET_LOOP=$(getkey select.reset_loop)
+    PREVIOUS_STEP=$(getkey select.previous_step)
+
+    if $CLEAR_SCREEN; then clear; fi
+
+    SELECT_ARRAY=()
+    for (( LOOP=0; LOOP<${JSON_SELECT_LENGTH}; LOOP++ ))
+    do 
+
+        declare LOOP_SELECT_INDEX=$LOOP
+        declare LOOP_SELECT_TITLE=$(getkey select.options[$LOOP].title)
+        declare LOOP_SELECT_TITLE_STYLE=$(getkey select.options[$LOOP].title_style)
+        declare LOOP_SELECT_DESCRIPTION=$(getkey select.options[$LOOP].description)
+        declare LOOP_SELECT_DESCRIPTION_STYLE=$(getkey select.options[$LOOP].description_style)
+        declare LOOP_SELECT_COMMAND=$(getkey select.options[$LOOP].command)
+        declare LOOP_SELECT_HEIGHT=$(getkey select.options[$LOOP].height)
+        declare LOOP_SELECT_SIDEBAR_STYLE=$(getkey select.options[$LOOP].bullet)
+
+        LOOP_SELECT_COMMAND=${LOOP_SELECT_COMMAND//\\/}  
+
+        TITLE_STYLE_TEXT_COLOUR="${TEXT_GRAY_100}"
+        DESCRIPTION_STYLE_TEXT_COLOUR="${TEXT_GRAY_400}"
+        SIDELINE_STYLE_BORDER_COLOUR="${BORDER_GRAY_900}"
+
+        parse_classes "TITLE_STYLE" "${LOOP_SELECT_TITLE_STYLE}"
+        parse_classes "DESCRIPTION_STYLE" "${LOOP_SELECT_DESCRIPTION_STYLE}"
+
+        SELECT_ARRAY+=("")
+
+        declare SELECT_ARRAY_INDEX_$LOOP="${LOOP_SELECT_INDEX}"
+        declare SELECT_ARRAY_TITLE_$LOOP="${LOOP_SELECT_TITLE}"
+        declare SELECT_ARRAY_TITLE_STYLE_$LOOP="${LOOP_SELECT_TITLE_STYLE}"
+        declare SELECT_ARRAY_DESCRIPTION_$LOOP="${LOOP_SELECT_DESCRIPTION}"
+        declare SELECT_ARRAY_DESCRIPTION_STYLE_$LOOP="${LOOP_SELECT_DESCRIPTION_STYLE}"
+        declare SELECT_ARRAY_COMMAND_$LOOP="${LOOP_SELECT_COMMAND}"
+        declare SELECT_ARRAY_HEIGHT_$LOOP="${LOOP_SELECT_HEIGHT}"
+        declare SELECT_ARRAY_SIDEBAR_STYLE_$LOOP="${LOOP_SELECT_SIDEBAR_STYLE}"
+
+    done
+
+    if $DISPLAY_HELP; then
+        printf "$TEXT_STONE_500 $ICON_ARROW_W $TEXT_STONE_600 menu $TEXT_WHITE_FFF $ICON_CIRCLE $TEXT_STONE_500 $ICON_ARROW_N $TEXT_STONE_600 up $TEXT_WHITE_FFF $ICON_CIRCLE $TEXT_STONE_500 $ICON_ARROW_S $TEXT_STONE_600 down $TEXT_WHITE_FFF $ICON_CIRCLE $TEXT_STONE_500 $ICON_ARROW_E $TEXT_STONE_600 exit $TEXT_WHITE_FFF $ICON_CIRCLE $TEXT_STONE_500 enter$TEXT_STONE_600 choose $RESET_TEXT\n\n";
+    fi
+
+    printf "$HEADING\n\n"
+    select_option "${SELECT_ARRAY[@]}"
+    choice=$?
+
+    COMMAND_NAME="SELECT_ARRAY_COMMAND_$choice"
+    COMMAND="${!COMMAND_NAME}"
+
+    if ! $HIDE_MESSAGE; then
+        printf '%s' "Running command:${TEXT_EMERALD_300} ${COMMAND} ${RESET_TEXT}"
+    fi
+
+    if $CLEAR_BEFORE_COMMAND_SCREEN; then clear; fi
+    eval "${COMMAND}"
+
+    if $RESET_LOOP; then
+        options $@
+    fi
+
+}
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                                                                              ║
+# ║                             END - JSON MENU CODE                             ║
+# ║                                                                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
