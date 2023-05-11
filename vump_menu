@@ -944,7 +944,7 @@ cmd_dbload() {
 function vump_dbload()
 {
     # Extract backup file out of image
-    if ! docker run $PWD:/opt/mount --rm --entrypoint cp $IMAGE_NAME /db-data/backup.sql /opt/mount/backup.sql; 
+    if ! docker run -v $PWD:/opt/mount --rm --entrypoint cp $IMAGE_NAME /db-data/backup.sql /opt/mount/backup.sql; 
     then
         printf "\n${TEXT_RED_500}Error: Could not copy backup.sql file from Image $IMAGE_NAME."
         exit 1
