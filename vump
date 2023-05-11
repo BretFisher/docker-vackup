@@ -67,26 +67,6 @@ usage()
 EOF
         printf "\n\n"
 
-        printf "Usage:\n\n"
-
-        printf " -e | --export <VOLUME> <FILE>\n"
-        printf "\tCreates a gzip'ed tarball in current directory from a volume.\n\n"
-
-        printf " -i | --import <FILE> <VOLUME>\n"
-        printf "\tExtracts a gzip'ed tarball into a volume.\n\n"
-
-        printf " -s | --save <VOLUME> <IMAGE>\n"
-        printf "\tCopies the volume contents to a busybox image in the /volume-data directory.\n\n"
-
-        printf " -l | --load <IMAGE> <VOLUME>\n"
-        printf "\tCopies /volume-data contents from an image to a volume.\n\n"
-
-        printf " -ds | --dbsave <VOLUME> <IMAGE> <DB_USERNAME> <DB_PASSWORD>\n"
-        printf "\tDatabase MySQLDump to a busybox image in the /volume-data directory.\n\n"
-
-        printf " -dl | --dbload <IMAGE> <VOLUME> <DB_USERNAME> <DB_PASSWORD>\n"
-        printf "\tCopies and loads /volume-data database file from an image to a volume.\n\n"
-
         exit 1
     fi
 }
@@ -99,6 +79,7 @@ function arguments()
 {
     POSITIONAL_ARGS=()
 
+    while [[ $# -gt 0 ]]; do
     case $1 in
 
     
@@ -204,7 +185,8 @@ function arguments()
             shift                   # remove argument and shift past it.
             ;;
     esac
-
+    done
+    
 }
 
 
@@ -634,5 +616,13 @@ cmd_dbload() {
 }
 
 
+
+
+function main()
+{
+
+}
+
 usage "$@"
 arguments "$@"
+main "$@"
