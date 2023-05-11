@@ -442,69 +442,19 @@ function confirmation()
 # ╭──────────────────────────────────────────────────────────╮
 # │                          EXPORT                          │
 # ╰──────────────────────────────────────────────────────────╯
-#
-# Copy files from a volume into a tar.gz file on the host.
-# 
-# 1. Create a BUSYBOX container
-# 2. mount volume to    /vackup-volume
-# 3. mount $pwd to      /vackup
-# 4. create tar.gz of volume into $pwd
-#                                ┌──────────────────────┐
-# ┌────────────────┐             │ ┌────────────────┐   │
-# │       ./       │────mount────┼▶│    /vackup     │   │
-# └────────────────┘             │ └──────────────▲─┘   │
-#                                │                │     │
-#                                │ busybox       tar -c │
-#                                │                │     │
-# ┌────────────────┐             │ ┌──────────────┴─┐   │
-# │     volume     │────mount────┼▶│ /vackup-volume │   │
-# └────────────────┘             │ └────────────────┘   │
-#                                └──────────────────────┘
 function cmd_export() {
-
+    clear
     select_volume "Select volume to EXPORT from"
     VOLUME_NAME="$VOLUME"
-    clear
     ask_question "Filename to export to? "
     FILE_NAME="$ANSWER"
-
-    # Add tar.gz on the end.
-    if [[ ! $FILE_NAME == *.tar.gz ]]; then
-        FILE_NAME="$FILE_NAME.tar.gz"
-    fi
-
-    # Check parameters are set
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        usage
-        exit 1
-    fi
-    
-    # Check docker volume exists
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME" > /dev/null 2>&1;
-    then
-        printf "\n${TEXT_RED_500}Error: Volume $VOLUME_NAME does not exist"
-        exit 1
-    fi
-
     confirmation "You are going to export volume '${VOLUME_NAME}' to a file ${FILE_NAME}"
-    
     spin "vump_export" "Exporting" "vump_export" 
 }
 
 function vump_export()
 {
-    if ! docker run --rm \
-        -v "$VOLUME_NAME":/vackup-volume \
-        -v "$(pwd)":/vackup \
-        busybox \
-        tar -zcvf /vackup/"$FILE_NAME" /vackup-volume > /dev/null 2>&1;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to start busybox backup container"
-        exit 1
-    fi
-
-    printf "\n${TEXT_EMERALD_500}Successfully tar'ed volume $VOLUME_NAME into file $FILE_NAME ${RESET_TEXT}\n"
+    vump --export --volume $VOLUME_NAME --filename $FILE_NAME
 }
 
 
@@ -512,359 +462,86 @@ function vump_export()
 # ╭──────────────────────────────────────────────────────────╮
 # │                          IMPORT                          │
 # ╰──────────────────────────────────────────────────────────╯
-# 
-# Loads the contents of a backup tar.gz into a Volume.
-#
-# 1. Create a BUSYBOX container
-# 2. mount volume to    /vackup-volume
-# 3. mount $pwd to      /vackup
-# 4. extract contents of tar.gz into volume
-#
-#                                ┌──────────────────────┐
-# ┌────────────────┐             │ ┌────────────────┐   │
-# │       ./       │────mount────┼▶│    /vackup     │   │
-# └────────────────┘             │ └──────────────┬─┘   │
-#                                │                │     │
-#                                │ busybox       tar -x │
-#                                │                │     │
-# ┌────────────────┐             │ ┌──────────────▼─┐   │
-# │     volume     │────mount────┼▶│ /vackup-volume │   │
-# └────────────────┘             │ └────────────────┘   │
-#                                └──────────────────────┘
-#
 function cmd_import() {
     clear
     ask_question "Filename to import from? "
     FILE_NAME="$ANSWER"
-
     select_volume "Select Volume to IMPORT into."
     VOLUME_NAME="$VOLUME"
-    
-    # Check parameters are set
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        usage
-        exit 1
-    fi
-    
-    # Check docker volume exists
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
-    then
-        printf "\n${TEXT_RED_500}Error: Volume $VOLUME_NAME does not exist"
-        docker volume create "$VOLUME_NAME"
-    fi  
-
     confirmation "You are about to import the data in the file ${FILE_NAME} into the volume '${VOLUME_NAME}'"
-
     spin "vump_import" "Importing" "vump_import"
 }
 
 function vump_import()
 {
-    if ! docker run --rm \
-        -v "$VOLUME_NAME":/vackup-volume \
-        -v "$(pwd)":/vackup \
-        busybox \
-        tar -xvzf /vackup/"$FILE_NAME" -C /; 
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to start busybox container"
-        exit 1
-    fi
-
-    printf "${TEXT_EMERALD_500}Successfully unpacked $FILE_NAME into volume $VOLUME_NAME ${RESET_TEXT}\n"
+    vump --import --filename $FILE_NAME --volume $VOLUME_NAME
 }
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                           SAVE                           │
 # ╰──────────────────────────────────────────────────────────╯
-#
-# Save contents of a volume to a container image.
-#
-# 1. Mount volume to busybox
-# 2. Copy contents to /volume-data/
-# 3. Make an image of the container
-# 4. Delete container
-#
-#                               ┌──────────────────────┐
-# ┌────────────────┐            │  ┌────────────────┐  │
-# │     volume     │────mount───┼─▶│ /vackup-volume │  │
-# └────────────────┘            │  └──────────────┬─┘  │
-#                               │                 │    │
-#                               │ busybox      cp -Rp  │
-#                               │                 │    │
-#                               │ ┌───────────────▼┐   │
-#                               │ │ /volume-data/  │   │
-#                               │ └────────────────┘   │
-#                               └──────────────────────┘
-#                                           │           
-#                                           ▼           
-#                               ┌──────────────────────┐
-#                               │  Image of Container  │
-#                               └──────────────────────┘
-#
 function cmd_save() {
-
+    clear
     select_volume "Select Volume to save into a backup image."
     VOLUME_NAME="$VOLUME"
-    clear
     ask_question "Name to give backup image? "
     IMAGE_NAME="$ANSWER"
-
-    # Check parameters are set
-    if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        exit 1
-    fi
-
-    # Check docker volume exists
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
-    then
-        printf "\n${TEXT_RED_500}Error: Volume $VOLUME_NAME does not exist"
-        exit 1
-    fi
-
     confirmation "You are about to save the data in the volume '${VOLUME_NAME}' into a container image called '${IMAGE_NAME}' "
-
     spin "vump_save" "Saving" "vump_save"
 }
 
 function vump_save()
 {
-
-    # Copy everything from volume to busybox container
-    if ! docker run \
-        -v "$VOLUME_NAME":/mount-volume \
-        busybox \
-        cp -Rp /mount-volume/. /volume-data/;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to start busybox container"
-        exit 1
-    fi
-
-    # Get latest container ID (hash)
-    CONTAINER_ID=$(docker ps -lq)
-
-    # Create a new Image
-    docker commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
-
-    # Delete the container
-    docker container rm "$CONTAINER_ID"
-
-    printf "${TEXT_EMERALD_500}Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data ${RESET_TEXT}\n"
-
+    vump --save --volume $VOLUME_NAME --image $IMAGE_NAME 
 }
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                           LOAD                           │
 # ╰──────────────────────────────────────────────────────────╯
-#
-# Load contents of a container image into a Volume.
-#
-# 1. Create container of image
-# 2. Mount volume to /mount-volume
-# 3. Copy everything in /volume-data to /mount-volume
-#
-#                               ┌──────────────────────┐
-# ┌────────────────┐            │  ┌────────────────┐  │
-# │     volume     │────mount───┼─▶│ /mount-volume  │  │
-# └────────────────┘            │  └──────────────▲─┘  │
-#                               │                 │    │
-#                               │ busybox      cp -Rp  │
-#                               │                 │    │
-#                               │ ┌───────────────┴┐   │
-#                               │ │ /volume-data/  │   │
-#                               │ └────────────────┘   │
-#                               └──────────────────────┘
-#                                           ▲           
-#                                           │           
-#                               ┌──────────────────────┐
-#                               │  Image of Container  │
-#                               └──────────────────────┘
-#
 cmd_load() {
-
+    clear
     select_image "Select backup image to load data from."
     IMAGE_NAME="$IMAGE"
-
     select_volume "Select volume to load data into."
     VOLUME_NAME="$VOLUME"
-    
-    # Check parameters are set
-    if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        usage
-        exit 1
-    fi
-
-    # Check docker volume exists
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
-    then
-        printf "Volume $VOLUME_NAME does not exist, creating..."
-        docker volume create "$VOLUME_NAME"
-    fi
-    
     confirmation "You are about to load the contents of the container image called '${IMAGE_NAME}' into the volume '${VOLUME_NAME}'"
-
     spin "vump_load" "Loading" "vump_load"
 }
 
 function vump_load()
 {
-    # Copy everything from container into volume under /mount-volume
-    if ! docker run --rm \
-        -v "$VOLUME_NAME":/mount-volume \
-        "$IMAGE_NAME" \
-        cp -Rp /volume-data/. /mount-volume/; 
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to start container from $IMAGE_NAME"
-        exit 1
-    fi
-
-    printf "${TEXT_EMERALD_500}Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME ${RESET_TEXT}\n"
+    vump --load --image $IMAGE_NAME --volume $VOLUME_NAME
 }
-
-
-
-
-
-
-
-
 
 
 # ╭──────────────────────────────────────────────────────────╮
 # │                          DBSAVE                          │
 # ╰──────────────────────────────────────────────────────────╯
-#
-# Extracts the database from a Volume and creates a backup image
-#
-# 1. Run DB Container (with DB volume mounted)
-# 2. MySQLDump database to current folder
-# 3. Create new busybox container
-# 4. Mount current dir to container
-# 5. Copy dump file into container
-# 6. Make image of container
-#
-#                                 ┌─────────────────────────┐
-#                                 │     MySQL Container     │
-# ┌──────────────────┐            │                         │
-# │     DB Volume    │── mount ───┼───────▶ mysqldump       │
-# └──────────────────┘            │             │           │
-# ┌──────────────────┐            │ ┌───────────▼─────────┐ │
-# │   ./backup.sql   │◀─── cp ────┼─│   /tmp/backup.sql   │ │
-# └──────────────────┘            │ └─────────────────────┘ │
-#           │                     └─────────────────────────┘
-#           │                                                
-#           │                     ┌─────────────────────────┐
-#           │                     │         busybox         │
-#           │                     │                         │
-#           │                     │ ┌─────────────────────┐ │
-#           └─────── mount ───────┼▶│ /vackup/backup.sql  │ │
-#                                 │ └──────────┬──────────┘ │
-#                                 │            │ cp -p      │
-#                                 │            ▼            │
-#                                 │ ┌─────────────────────┐ │
-#                                 │ │ /db-data/backup.sql │ │
-#                                 │ └─────────────────────┘ │
-#                                 └─────────────────────────┘
-#                                              │ commit      
-#                                              ▼             
-#                                  ┌──────────────────────┐  
-#                                  │  Image of Container  │  
-#                                  └──────────────────────┘  
-#
 function cmd_dbsave() {
-
-    DB_USERNAME="root"
-
+    clear
     select_container "Select MySQL Container to backup."
     CONTAINER="$CONTAINER"
-
-    clear
     ask_question "Name to give backup image? "
     IMAGE_NAME="$ANSWER"
-
-    clear
+    ask_question "database username? "
+    DB_USERNAME="$ANSWER"
     ask_question "$DB_USERNAME database password? "
     DB_PASSWORD="$ANSWER"
-
     select_database "Select database to backup. "
     DB_DATABASE="$DB_DATABASE"
 
     printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
     printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
     printf "${TEXT_GRAY_500}DB_DATABASE: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_DATABASE"
-    printf "${TEXT_GRAY_500}DB_USERNAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_USERNAME"
-    # printf "${TEXT_GRAY_500}DB_PASSWORD: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_PASSWORD"
-    printf "\n\n"
-
-    # Check parameters are set
-    if [ -z "$CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        usage
-        exit 1
-    fi
-
-    # Check docker container exists
-    if ! docker ps -a | grep "$CONTAINER" > /dev/null 2>&1; 
-    then
-        printf "\n${TEXT_RED_500}Error: Container $CONTAINER does not exist"
-        exit 1
-    fi
-
-    # Check docker container has mysql
-    if ! docker exec $CONTAINER \
-        mysqldump --version > /dev/null 2>&1; 
-    then
-        printf "\n${TEXT_RED_500}Error: Container $CONTAINER does not have a MySQL database"
-        exit 1
-    fi
+    printf "${TEXT_GRAY_500}DB_USERNAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n\n\n" "$DB_USERNAME"
 
     confirmation "You are about to create a backup of database '${DB_DATABASE}' in container '${CONTAINER}' into an image called '${IMAGE_NAME}' "
-
     spin "vump_dbsave" "Loading" "vump_dbsave"
-
 }
 
 vump_dbsave()
 {
-
-    # Dump Database to /tmp
-    if ! docker exec $CONTAINER \
-        /bin/sh -c "mysqldump -u$DB_USERNAME -p$DB_PASSWORD --single-transaction $DB_DATABASE > /tmp/backup.sql";
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to dump database to /tmp/backup.sql"
-        exit 1
-    fi
-
-    # Copy backup file out of container
-    if ! docker cp $CONTAINER:/tmp/backup.sql ./backup.sql;
-    then
-        printf "\n${TEXT_RED_500}Error: Unable to copy $CONTAINER:/tmp/backup.sql to current folder."
-        exit 1
-    fi
-
-    # Copy backup.sql file to busybox container
-    if ! docker run \
-        -v "$(pwd)":/vackup \
-        busybox \
-        /bin/sh -c "mkdir -p /db-data/ && cp -p /vackup/backup.sql /db-data/backup.sql" ;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to start busybox container"
-        exit 1
-    fi
-
-    # Get latest container ID (hash)
-    CONTAINER_ID=$(docker ps -lq)
-
-    # Create a new Image
-    docker commit -m "saving DB from container $CONTAINER to /db-data/backup.sql" "$CONTAINER_ID" "$IMAGE_NAME"
-
-    # Delete the container
-    docker container rm "$CONTAINER_ID"
-
-    printf "${TEXT_EMERALD_500}Successfully copied DB in container $CONTAINER into image $IMAGE_NAME, under /db-data${RESET_TEXT}\n"
-
+    vump --dbsave --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $IMAGE_NAME
 }
 
 # ╭──────────────────────────────────────────────────────────╮
@@ -907,66 +584,31 @@ vump_dbsave()
 #                                 └─────────────────────────┘
 #
 cmd_dbload() {
-
+    clear
     select_image "Select database image to load data from. "
     IMAGE_NAME="$IMAGE"
-
     select_container "Select MySQL container to load data into. "
     TARGET_CONTAINER="$CONTAINER"
-
-    clear
     ask_question "Name of database to load? "
     DB_DATABASE="$ANSWER"
-
-    clear
+    ask_question "database username? "
+    DB_USERNAME="$ANSWER"
     ask_question "$DB_USERNAME database password? "
     DB_PASSWORD="$ANSWER"
 
-    printf "CONTAINER: %s\n" "$CONTAINER"
-    printf "IMAGE_NAME: %s\n" "$IMAGE_NAME"
-    printf "DB_DATABASE: %s\n" "$DB_DATABASE"
-    printf "DB_USERNAME: %s\n" "$DB_USERNAME"
-    printf "DB_PASSWORD: %s\n" "$DB_PASSWORD"
-
-    # Check parameters are set
-    if [ -z "$TARGET_CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
-        printf "\n${TEXT_RED_500}Error: Not enough arguments"
-        usage
-        exit 1
-    fi
+    printf "${TEXT_GRAY_500}CONTAINER: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$CONTAINER"
+    printf "${TEXT_GRAY_500}IMAGE_NAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$IMAGE_NAME"
+    printf "${TEXT_GRAY_500}DB_DATABASE: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n" "$DB_DATABASE"
+    printf "${TEXT_GRAY_500}DB_USERNAME: ${TEXT_EMERALD_500}%s${RESET_TEXT}\n\n\n" "$DB_USERNAME"
 
     confirmation "You are about to load the mysqldump file on the container image '${IMAGE_NAME}' into the database in the container '${CONTAINER}'"
-
     spin "vump_dbload" "Loading" "vump_dbload"
-    
 }
 
 function vump_dbload()
 {
-    # Extract backup file out of image
-    if ! docker run -v $PWD:/opt/mount --rm --entrypoint cp $IMAGE_NAME /db-data/backup.sql /opt/mount/backup.sql; 
-    then
-        printf "\n${TEXT_RED_500}Error: Could not copy backup.sql file from Image $IMAGE_NAME."
-        exit 1
-    fi
-    
-    # Copy backup file into container
-    if ! docker cp ./backup.sql $TARGET_CONTAINER:/tmp/backup.sql ;
-    then
-        printf "\n${TEXT_RED_500}Error: Unable to copy backup.sql into $TARGET_CONTAINER:/tmp/backup.sql"
-        exit 1
-    fi
+    vump --dbload --database $DB_DATABASE --username $DB_USERNAME --password $DB_PASSWORD --container $CONTAINER --image $IMAGE_NAME
 
-    # Load the Mysql Database
-    if ! docker exec \
-        $TARGET_CONTAINER \
-        /bin/sh -c "cat /tmp/backup.sql | /usr/bin/mysql -u$DB_USERNAME -p$DB_PASSWORD $DB_DATABASE > /dev/null 2>&1" ;
-    then
-        printf "\n${TEXT_RED_500}Error: Failed to load SQL file into database."
-        exit 1
-    fi
-
-    printf "${TEXT_EMERALD_500}Successfully loaded the SQL file from the $IMAGE_NAME image, into the $TARGET_CONTAINER DB container.${RESET_TEXT}\n"
 }
 
 

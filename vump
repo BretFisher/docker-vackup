@@ -34,38 +34,83 @@ trap "rm -f ./backup.sql" EXIT
 
 usage()
 {
-    if [ "$#" -lt 2 ]; then
-
-
-        printf "🚚 Volume Dump\n\n"
-
-        printf "Docker Volume backup/recovery, import and export tool that includes MySQL databases.\n\n"
-
-        printf "export/import copies files between a host tarball and a volume. For making volume backups and restores.\n\n"
-        printf "save/load copies files from the volume into a container which then is made into a new image for commiting to registry.\n\n"
-        printf "dbsave/dbload creates a Mysqldump file from the database into a container and is then made into an image for the registry.\n\n"
+    if [ "$#" -lt 1 ]; then
 
         cat <<EOF
-┌────────┐                 ┌────────────────────────┐ 
-│        │◀──── export ────│                        │ 
-│   ./   │                 │         volume         │ 
-│        │───── import ───▶│                        │ 
-└────────┘                 └────────────────────────┘ 
-                              │     │       ▲     ▲   
-                             save dbsave    │     │   
-                              │     │    dbload  load  
-                              ▼     ▼       │     │   
-                           ┌────────────────────────┐ 
-                           │   busybox container    │ 
-                           │      /volume-data      │ 
-                           └────────────────────────┘ 
-                                 │             ▲      
-                                 ▼             │      
-                           ┌────────────────────────┐ 
-                           │  Image  of container   │ 
-                           └────────────────────────┘ 
+
+    🚚 Volume Dump
+
+        Docker Volume backup/recovery, import and export tool that includes MySQL databases.
+
+        export/import copies files between a host tarball and a volume. For making volume backups and restores.
+
+        save/load copies files from the volume into a container which then is made into a new image for commiting to registry.
+
+        dbsave/dbload creates a Mysqldump file from the database into a container and is then made into an image for the registry.
+
+        ┌────────┐                 ┌────────────────────────┐ 
+        │        │◀──── export ────│                        │ 
+        │   ./   │                 │         volume         │ 
+        │        │───── import ───▶│                        │ 
+        └────────┘                 └────────────────────────┘ 
+                                    │     │       ▲     ▲   
+                                    save dbsave    │     │   
+                                    │     │    dbload  load  
+                                    ▼     ▼       │     │   
+                                ┌────────────────────────┐ 
+                                │   busybox container    │ 
+                                │      /volume-data      │ 
+                                └────────────────────────┘ 
+                                        │             ▲      
+                                        ▼             │      
+                                ┌────────────────────────┐ 
+                                │  Image  of container   │ 
+                                └────────────────────────┘ 
+
+        EXPORT
+        ------
+        Used to copy all data inside a volume to a .tar.gz file on the host in the current directory.
+
+        ./vump --export  --volume [volumename] --filename [filename.tar.gz]
+
+
+        IMPORT
+        ------
+        Used to copy all data inside a .tar.gz file on the host into a specific volume.
+        
+        ./vump --import --filename [filename.tar.gz] --volume [volumename]
+
+
+        SAVE
+        ----
+        Used to copy all data inside a volume onto a new container image. Used to backup to a container repository.
+        Use on volumes with web-files / assets / etc... 
+        
+        ./vump --save --volume [volumename] --image [name_of_image] 
+
+
+        LOAD
+        ----
+        Used to recover all data inside a backup container image onto a volume.
+        
+        ./vump --load --image [name_of_image] --volume [volumename] 
+
+
+        DBSAVE
+        ------
+        Used on mysql containers. Creates a mysqldump and puts the file into a backup container image.
+        Use on containers with mysql installed and has a database you wish to backup.
+
+        ./vump --dbsave --container [container] --image [name_of_image] --database [database_name] --username [database_username] --password [database_password]
+
+
+        DBLOAD
+        ------
+        Used on mysql containers. Loads the contents of the SQL file in a database backup image into the container MySQL.
+        
+        ./vump --dbload --image [name_of_image] --container [container] --database [database_name] --username [database_username] --password [database_password]
+
 EOF
-        printf "\n\n"
 
         exit 1
     fi
@@ -86,13 +131,11 @@ function arguments()
         -e|--export)
             COMMAND="export"
             shift
-            shift
             ;;
 
 
         -i|--import)
             COMMAND="import"
-            shift
             shift
             ;;
 
@@ -100,13 +143,11 @@ function arguments()
         -s|--save)
             COMMAND="save"
             shift
-            shift
             ;;
 
 
         -l|--load)
             COMMAND="load"
-            shift
             shift
             ;;
 
@@ -114,13 +155,11 @@ function arguments()
         -ds|--dbsave)
             COMMAND="dbsave"
             shift
-            shift
             ;;
 
 
         -dl|--dbload)
             COMMAND="dbload"
-            shift
             shift
             ;;
 
@@ -147,28 +186,28 @@ function arguments()
 
 
         -F|--filename)
-            IMAGE="$2"
+            FILENAME="$2"
             shift
             shift
             ;;
 
 
         -d|--database)
-            IMAGE="$2"
+            DATABASE="$2"
             shift
             shift
             ;;
 
 
-        -u|--dbuser)
-            IMAGE="$2"
+        -u|--username)
+            USERNAME="$2"
             shift
             shift
             ;;
 
 
-        -p|--dbpass)
-            IMAGE="$2"
+        -p|--password)
+            PASSWORD="$2"
             shift
             shift
             ;;
@@ -211,9 +250,14 @@ function arguments()
 #                                └──────────────────────┘
 function cmd_export() {
 
-    VOLUME_NAME="$2"
-    FILE_NAME="$3"
+    VOLUME_NAME="$1"
+    FILE_NAME="$2"
     
+    # Add tar.gz on the end.
+    if [[ ! $FILE_NAME == *.tar.gz ]]; then
+        FILE_NAME="$FILE_NAME.tar.gz"
+    fi
+
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
@@ -227,12 +271,6 @@ function cmd_export() {
         echo "Error: Volume $VOLUME_NAME does not exist"
         exit 1
     fi
-
-    # TODO: check if file exists on host, if it does
-    # create a option for overwrite and check if that's set
-    # TODO: if FILE_NAME starts with / we need to error out
-    # unless we can translate full file paths
-
 
     if ! docker run --rm \
         -v "$VOLUME_NAME":/vackup-volume \
@@ -271,8 +309,8 @@ function cmd_export() {
 #                                └──────────────────────┘
 #
 function cmd_import() {
-    FILE_NAME="$2"
-    VOLUME_NAME="$3"
+    FILE_NAME="$1"
+    VOLUME_NAME="$2"
     
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
@@ -287,11 +325,6 @@ function cmd_import() {
         echo "Error: Volume $VOLUME_NAME does not exist"
         docker volume create "$VOLUME_NAME"
     fi
-
-    # TODO: check if file exists on host, if it does
-    # create a option for overwrite and check if that's set
-    # TODO: if FILE_NAME starts with / we need to error out
-    # unless we can translate full file paths    
 
     if ! docker run --rm \
         -v "$VOLUME_NAME":/vackup-volume \
@@ -334,8 +367,8 @@ function cmd_import() {
 #                               └──────────────────────┘
 #
 function cmd_save() {
-    VOLUME_NAME="$2"
-    IMAGE_NAME="$3"
+    VOLUME_NAME="$1"
+    IMAGE_NAME="$2"
 
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
@@ -347,7 +380,7 @@ function cmd_save() {
     # Check docker volume exists
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME"; 
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
+        echo "${TEXT_RED_500}Error: Volume $VOLUME_NAME does not exist"
         exit 1
     fi
 
@@ -370,7 +403,7 @@ function cmd_save() {
     # Delete the container
     docker container rm "$CONTAINER_ID"
 
-    echo "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
+    printf "${TEXT_EMERALD_500}Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data ${RESET_TEXT}\n"
 }
 
 
@@ -400,8 +433,8 @@ function cmd_save() {
 #                               └──────────────────────┘
 #
 cmd_load() {
-    IMAGE_NAME="$2"
-    VOLUME_NAME="$3"
+    IMAGE_NAME="$1"
+    VOLUME_NAME="$2"
     
     # Check parameters are set
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
@@ -427,7 +460,7 @@ cmd_load() {
         exit 1
     fi
 
-    echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
+    printf "${TEXT_EMERALD_500}Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME ${RESET_TEXT}\n"
 }
 
 
@@ -471,11 +504,11 @@ cmd_load() {
 #                                  └──────────────────────┘  
 #
 function cmd_dbsave() {
-    CONTAINER="$2"
-    IMAGE_NAME="$3"
-    DB_DATABASE="$4"
+    CONTAINER="$1"
+    IMAGE_NAME="$2"
+    DB_DATABASE="$3"
+    DB_USERNAME="$4"
     DB_PASSWORD="$5"
-    DB_USERNAME="root"
 
     # Check parameters are set
     if [ -z "$CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
@@ -533,8 +566,7 @@ function cmd_dbsave() {
     # Delete the container
     docker container rm "$CONTAINER_ID"
 
-    echo "Successfully copied DB in container $CONTAINER into image $IMAGE_NAME, under /db-data"
-}
+    printf "${TEXT_EMERALD_500}Successfully copied DB in container $CONTAINER into image $IMAGE_NAME, under /db-data${RESET_TEXT}\n"}
 
 
 # ╭──────────────────────────────────────────────────────────╮
@@ -575,11 +607,12 @@ function cmd_dbsave() {
 #                                 └─────────────────────────┘
 #
 cmd_dbload() {
-    IMAGE_NAME="$2"
-    TARGET_CONTAINER="$3"
-    DB_DATABASE="$4"
+    IMAGE_NAME="$1"
+    TARGET_CONTAINER="$2"
+    DB_DATABASE="$3"
+    DB_USERNAME="$4"
     DB_PASSWORD="$5"
-    DB_USERNAME="root"
+
     
     # Check parameters are set
     if [ -z "$TARGET_CONTAINER" ] || [ -z "$IMAGE_NAME" ] || [ -z "$DB_DATABASE" ] || [ -z "$DB_PASSWORD" ]; then
@@ -612,7 +645,7 @@ cmd_dbload() {
         exit 1
     fi
 
-    echo "Successfully loaded the SQL file from the $IMAGE_NAME image, into the $TARGET_CONTAINER DB container."
+    printf "${TEXT_EMERALD_500}Successfully loaded the SQL file from the $IMAGE_NAME image, into the $TARGET_CONTAINER DB container.${RESET_TEXT}\n"
 }
 
 
@@ -621,8 +654,46 @@ cmd_dbload() {
 function main()
 {
 
+    case $COMMAND in
+
+        export)
+            echo "running export. volume: ${VOLUME}. filename: ${FILENAME} " 
+            cmd_export ${VOLUME} ${FILENAME}
+            ;;
+
+        import)
+            echo "running import. filename: ${FILENAME}. volume: ${VOLUME}"
+            cmd_import ${FILENAME} ${VOLUME}
+            ;;
+
+        save)
+            echo "running save. volume: ${VOLUME}. image name: ${IMAGE}"
+            cmd_save ${VOLUME} ${IMAGE} 
+            ;;
+
+        load)
+            echo "running load. image name: ${IMAGE}. volume: ${VOLUME}" 
+            cmd_load ${IMAGE} ${VOLUME} 
+            ;;
+
+        dbsave)
+            echo "running dbsave. container: ${CONTAINER}. image name: ${IMAGE}. database: ${DATABASE}. user/pass: ${USERNAME}/${PASSWORD}" 
+            cmd_dbsave ${CONTAINER} ${IMAGE} ${DATABASE} ${USERNAME} ${PASSWORD}
+            ;;
+
+        dbload)
+            echo "running dbload. image name: ${IMAGE}. container: ${CONTAINER}. database: ${DATABASE}. user/pass: ${USERNAME}/${PASSWORD}" 
+            cmd_dbload ${IMAGE} ${CONTAINER} ${DATABASE} ${USERNAME} ${PASSWORD}
+            ;;
+
+        *)
+            echo "Unknown command : $COMMAND"
+            exit 1
+            ;;
+
+    esac
 }
 
 usage "$@"
 arguments "$@"
-main "$@"
+main
