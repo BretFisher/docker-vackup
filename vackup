@@ -16,6 +16,7 @@ handle_error() {
   exit $exit_code
 }
 
+# ermöglicht das Handling von Signalen wie z.b "error" diese werden über 'handle_error $LINENO' ERR ausgegeben bzw gehändelt.
 trap 'handle_error $LINENO' ERR
 
 usage() {
