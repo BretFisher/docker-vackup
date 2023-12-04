@@ -107,7 +107,7 @@ cmd_import() {
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -xvzf /vackup/"$FILE_NAME" -C /; 
+      tar -xvzf /vackup/"$FILE_NAME" -C /vackup-volume; 
     then
         echo "Error: Failed to start busybox container"
         exit 1
