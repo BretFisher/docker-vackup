@@ -73,7 +73,7 @@ cmd_export() {
       -v "$VOLUME_NAME":/vackup-volume \
       -v "$(pwd)":/vackup \
       busybox \
-      tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
+      tar -zcvf /vackup/"$FILE_NAME" -C /vackup-volume .;
     then
         echo "Error: Failed to start busybox backup container"
         exit 1
