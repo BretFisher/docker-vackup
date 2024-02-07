@@ -184,6 +184,7 @@ case "$COMMAND" in
   import) cmd_import "$@" ;;
   save) cmd_save "$@" ;;
   load) cmd_load "$@" ;;
+  *) echo "Error: '$COMMAND' is not a recognized command" ; usage ;;
 esac
 
 exit 0
