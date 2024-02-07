@@ -52,12 +52,16 @@ cmd_export() {
     VOLUME_NAME="$2"
     FILE_NAME="$3"
     
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
+    if [ -z "$VOLUME_NAME" ] ; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
-    
+
+    if [ -z "$FILE_NAME" ]; then
+        FILE_NAME="$VOLUME_NAME.tar.gz"
+    fi
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
@@ -86,12 +90,17 @@ cmd_import() {
     FILE_NAME="$2"
     VOLUME_NAME="$3"
     
-    if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
+    if [ -z "$FILE_NAME" ]; then
         echo "Error: Not enough arguments"
         usage
         exit 1
     fi
     
+    if [ -z "$VOLUME_NAME" ]; then
+        VOLUME_NAME="$FILE_NAME"
+        FILE_NAME="$VOLUME_NAME.tar.gz"
+    fi
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
