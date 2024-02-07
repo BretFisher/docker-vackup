@@ -91,7 +91,12 @@ cmd_import() {
         usage
         exit 1
     fi
-    
+
+    if [ ! -r "$FILE_NAME" ]; then
+        echo "Error: Could not find or open tar file $FILE_NAME"
+        exit 1
+    fi
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
