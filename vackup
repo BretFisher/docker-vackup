@@ -61,13 +61,13 @@ error() {
     fi
 
     if [ -z "$MESSAGE" ]; then
-        echo 'Error'
+        echo 1>&2 'Error'
     else
-        echo "Error: $MESSAGE"
+        echo 1>&2 "Error: $MESSAGE"
     fi
 
     if [ $USAGE -eq 1 ]; then
-        usage
+        usage 1>&2
     fi
 
     if [ -z "$CODE" ]; then
