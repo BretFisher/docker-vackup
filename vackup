@@ -97,6 +97,11 @@ cmd_import() {
         exit 1
     fi
 
+    if [ -d "$FILE_NAME" ]; then
+        echo "Error: $FILE_NAME is a directory"
+        exit 1
+    fi
+
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Error: Volume $VOLUME_NAME does not exist"
