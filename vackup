@@ -6,11 +6,17 @@
 set -Eeo pipefail
 
 handle_error() {
-  exit_code=$?
+  case $# in
+    1) LINE_NUMBER=$1; EXIT_CODE=$? ;;
+    2) LINE_NUMBER=$1; EXIT_CODE=$2 ;;
+    *) LINE_NUMBER=$LINENO; EXIT_CODE=1 ;;
+  esac
+
   if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
-    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$1" $exit_code
+    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$LINE_NUMBER" $EXIT_CODE
   fi
-  exit $exit_code
+
+  exit $EXIT_CODE
 }
 
 trap 'handle_error $LINENO' ERR
@@ -43,6 +49,35 @@ vackup load IMAGE VOLUME
 EOF
 }
 
+error() {
+    if [ "$1" == 'u' ] || [ "$1" == 'usage' ]; then
+        USAGE=1
+        MESSAGE=$2
+        CODE=$3
+    else
+        USAGE=0
+        MESSAGE=$1
+        CODE=$2
+    fi
+
+    if [ -z "$MESSAGE" ]; then
+        echo 1>&2 'Error'
+    else
+        echo 1>&2 "Error: $MESSAGE"
+    fi
+
+    if [ $USAGE -eq 1 ]; then
+        usage 1>&2
+    fi
+
+    if [ -z "$CODE" ]; then
+        CODE=1
+    fi
+
+    LINE_NUMBER=$(caller | awk '{ print $1 }')
+    handle_error $LINE_NUMBER $CODE
+}
+
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
@@ -53,15 +88,12 @@ cmd_export() {
     FILE_NAME="$3"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        echo "Error: Not enough arguments"
-        usage
-        exit 1
+        error usage 'Not enough arguments'
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
-        exit 1
+        error "Volume $VOLUME_NAME does not exist"
     fi
 
 # TODO: check if file exists on host, if it does
@@ -75,8 +107,7 @@ cmd_export() {
       busybox \
       tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
     then
-        echo "Error: Failed to start busybox backup container"
-        exit 1
+        error 'Failed to start busybox backup container'
     fi
 
     echo "Successfully tar'ed volume $VOLUME_NAME into file $FILE_NAME"
@@ -87,14 +118,12 @@ cmd_import() {
     VOLUME_NAME="$3"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
-        echo "Error: Not enough arguments"
-        usage
-        exit 1
+        error usage 'Not enough arguments'
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
+        echo "Warning: Volume $VOLUME_NAME does not exist, creating..."
         docker volume create "$VOLUME_NAME"
     fi
 
@@ -117,8 +146,7 @@ cmd_import() {
       busybox \
       tar -xvzf /vackup/"$FILE_NAME" -C /;
     then
-        echo "Error: Failed to start busybox container"
-        exit 1
+        error 'Failed to start busybox container'
     fi
 
     echo "Successfully unpacked $FILE_NAME into volume $VOLUME_NAME"
@@ -129,15 +157,12 @@ cmd_save() {
     IMAGE_NAME="$3"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        echo "Error: Not enough arguments"
-        usage
-        exit 1
+        error usage 'Not enough arguments'
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
-        echo "Error: Volume $VOLUME_NAME does not exist"
-        exit 1
+        error "Volume $VOLUME_NAME does not exist"
     fi
 
     if ! docker run \
@@ -145,8 +170,7 @@ cmd_save() {
       busybox \
       cp -Rp /mount-volume/. /volume-data/;
     then
-        echo "Error: Failed to start busybox container"
-        exit 1
+        error 'Failed to start busybox container'
     fi
 
     CONTAINER_ID=$(docker ps -lq)
@@ -163,14 +187,12 @@ cmd_load() {
     VOLUME_NAME="$3"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
-        echo "Error: Not enough arguments"
-        usage
-        exit 1
+        error usage 'Not enough arguments'
     fi
 
     if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
-      echo "Volume $VOLUME_NAME does not exist, creating..."
+      echo "Warning: Volume $VOLUME_NAME does not exist, creating..."
       docker volume create "$VOLUME_NAME"
     fi
 
@@ -179,8 +201,7 @@ cmd_load() {
       "$IMAGE_NAME" \
       cp -Rp /volume-data/. /mount-volume/;
     then
-        echo "Error: Failed to start container from $IMAGE_NAME"
-        exit 1
+        error "Failed to start container from $IMAGE_NAME"
     fi
 
     echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
