@@ -98,8 +98,16 @@ cmd_import() {
         docker volume create "$VOLUME_NAME"
     fi
 
-# TODO: check if file exists on host, if it does
-# create a option for overwrite and check if that's set
+    if [ ! -r "$FILE_NAME" ]; then
+        echo "Error: Could not find or open tar file $FILE_NAME"
+        exit 1
+    fi
+
+    if [ -d "$FILE_NAME" ]; then
+        echo "Error: $FILE_NAME is a directory"
+        exit 1
+    fi
+
 # TODO: if FILE_NAME starts with / we need to error out
 # unless we can translate full file paths
 
