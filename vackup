@@ -1,5 +1,5 @@
 #!/bin/bash
-# Docker Volume File Backup and Restore Tool
+# Docker/Container Volume File Backup and Restore Tool
 # Easily tar up a volume on a local (or remote) engine
 # Inspired by CLIP from Lukasz Lach
 
@@ -24,7 +24,8 @@ trap 'handle_error $LINENO' ERR
 usage() {
 cat <<EOF
 
-"Docker Volume Backup". Replicates image management commands for volumes.
+"Docker/Container Volume Backup". Replicates image management commands for volumes.
+If you set the environment variable CONTAINERDIST, you can use other Docker CMD capable tools, like Postman
 
 export/import copies files between a host tarball and a volume. For making
   volume backups and restores.
@@ -78,19 +79,6 @@ error() {
     handle_error $LINE_NUMBER $CODE
 }
 
-fulldirname() {
-  DIRECTORY=$(dirname "$1")
-
-  case "$DIRECTORY" in
-    /*) ;;
-    .*) ;& # fallthrough
-    *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
-  esac
-  DIRECTORY=$(readlink -m "$DIRECTORY")
-
-  echo "$DIRECTORY"
-}
-
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
@@ -111,13 +99,12 @@ cmd_export() {
 
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
-
-    DIRECTORY=$(fulldirname "$FILE_NAME")
-    FILE_NAME=$(basename "$FILE_NAME")
+# TODO: if FILE_NAME starts with / we need to error out
+# unless we can translate full file paths
 
     if ! docker run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$DIRECTORY":/vackup \
+      -v "$(pwd)":/vackup \
       busybox \
       tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
     then
@@ -135,10 +122,10 @@ cmd_import() {
         error usage 'Not enough arguments'
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! "$CONTAINER" volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         echo "Warning: Volume $VOLUME_NAME does not exist, creating..."
-        docker volume create "$VOLUME_NAME"
+        "$CONTAINER" volume create "$VOLUME_NAME"
     fi
 
     if [ ! -r "$FILE_NAME" ]; then
@@ -151,12 +138,12 @@ cmd_import() {
         exit 1
     fi
 
-    DIRECTORY=$(fulldirname "$FILE_NAME")
-    FILE_NAME=$(basename "$FILE_NAME")
+# TODO: if FILE_NAME starts with / we need to error out
+# unless we can translate full file paths
 
-    if ! docker run --rm \
+    if ! "$CONTAINER" run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$DIRECTORY":/vackup \
+      -v "$(pwd)":/vackup \
       busybox \
       tar -xvzf /vackup/"$FILE_NAME" -C /;
     then
@@ -174,12 +161,12 @@ cmd_save() {
         error usage 'Not enough arguments'
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! "$CONTAINER" volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         error "Volume $VOLUME_NAME does not exist"
     fi
 
-    if ! docker run \
+    if ! "$CONTAINER" run \
       -v "$VOLUME_NAME":/mount-volume \
       busybox \
       cp -Rp /mount-volume/. /volume-data/;
@@ -187,11 +174,11 @@ cmd_save() {
         error 'Failed to start busybox container'
     fi
 
-    CONTAINER_ID=$(docker ps -lq)
+    CONTAINER_ID=$("$CONTAINER" ps -lq)
 
-    docker commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
+    "$CONTAINER" commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
 
-    docker container rm "$CONTAINER_ID"
+    "$CONTAINER" container rm "$CONTAINER_ID"
 
     echo "Successfully copied volume $VOLUME_NAME into image $IMAGE_NAME, under /volume-data"
 }
@@ -204,13 +191,13 @@ cmd_load() {
         error usage 'Not enough arguments'
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! "$CONTAINER" volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
       echo "Warning: Volume $VOLUME_NAME does not exist, creating..."
-      docker volume create "$VOLUME_NAME"
+      "$CONTAINER" volume create "$VOLUME_NAME"
     fi
 
-    if ! docker run --rm \
+    if ! "$CONTAINER" run --rm \
       -v "$VOLUME_NAME":/mount-volume \
       "$IMAGE_NAME" \
       cp -Rp /volume-data/. /mount-volume/;
@@ -221,6 +208,9 @@ cmd_load() {
     echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
 }
 
+# Use other container management distributions, defaults to docker. Tested with Podman.
+CONTAINER=${CONTAINERDIST:-docker}
+# Standard command of the script
 COMMAND="$1"
 case "$COMMAND" in
   export) cmd_export "$@" ;;
