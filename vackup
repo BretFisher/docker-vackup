@@ -25,7 +25,7 @@ usage() {
 cat <<EOF
 
 "Docker/Container Volume Backup". Replicates image management commands for volumes.
-If you set the environment variable CONTAINERDIST, you can use other Docker CMD capable tools, like Postman
+You can also use an alternative Docker CMD compatible solution, if you set the env variable CONTAINERDIST. Example would be Podman
 
 export/import copies files between a host tarball and a volume. For making
   volume backups and restores.
@@ -79,6 +79,19 @@ error() {
     handle_error $LINE_NUMBER $CODE
 }
 
+fulldirname() {
+  DIRECTORY=$(dirname "$1")
+
+  case "$DIRECTORY" in
+    /*) ;;
+    .*) ;; # fallthrough
+    *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
+  esac
+  DIRECTORY=$(readlink -m "$DIRECTORY")
+
+  echo "$DIRECTORY"
+}
+
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
@@ -92,19 +105,20 @@ cmd_export() {
         error usage 'Not enough arguments'
     fi
 
-    if ! docker volume inspect --format '{{.Name}}' "$VOLUME_NAME";
+    if ! "$CONTAINER" volume inspect --format '{{.Name}}' "$VOLUME_NAME";
     then
         error "Volume $VOLUME_NAME does not exist"
     fi
 
 # TODO: check if file exists on host, if it does
 # create a option for overwrite and check if that's set
-# TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths
 
-    if ! docker run --rm \
+    DIRECTORY=$(fulldirname "$FILE_NAME")
+    FILE_NAME=$(basename "$FILE_NAME")
+
+    if ! "$CONTAINER" run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$(pwd)":/vackup \
+      -v "$DIRECTORY":/vackup \
       busybox \
       tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
     then
@@ -138,12 +152,12 @@ cmd_import() {
         exit 1
     fi
 
-# TODO: if FILE_NAME starts with / we need to error out
-# unless we can translate full file paths
+    DIRECTORY=$(fulldirname "$FILE_NAME")
+    FILE_NAME=$(basename "$FILE_NAME")
 
     if ! "$CONTAINER" run --rm \
       -v "$VOLUME_NAME":/vackup-volume \
-      -v "$(pwd)":/vackup \
+      -v "$DIRECTORY":/vackup \
       busybox \
       tar -xvzf /vackup/"$FILE_NAME" -C /;
     then
