@@ -188,7 +188,7 @@ cmd_save() {
         error 'Failed to start busybox container'
     fi
 
-    CONTAINER_ID=$("$CONTAINER" ps -lq)
+    CONTAINER_ID=$("$CONTAINER" ps -n 1 -q)
 
     "$CONTAINER" commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
 
