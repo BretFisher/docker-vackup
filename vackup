@@ -83,7 +83,6 @@ fulldirname() {
 
   case "$DIRECTORY" in
     /*) ;;
-    .*) ;& # fallthrough
     *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
   esac
   DIRECTORY=$(readlink -m "$DIRECTORY")
