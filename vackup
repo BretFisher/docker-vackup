@@ -86,7 +86,7 @@ fulldirname() {
     .*) ;& # fallthrough
     *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
   esac
-  DIRECTORY=$(readlink -m "$DIRECTORY")
+  DIRECTORY=$(readlink -f "$DIRECTORY")
 
   echo "$DIRECTORY"
 }
