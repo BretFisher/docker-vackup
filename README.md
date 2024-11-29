@@ -6,8 +6,10 @@
 
 Vackup: (contraction of "volume backup")
 
-Easily backup and restore Docker volumes using either tarballs or container images.
-It's designed for running from any host/container where you have the docker CLI.
+Easily backup and restore OCI volumes using either tarballs or container images.
+It's designed for running from any host/container where you have a docker capable CLI. It has been tested with Docker, Podman and Finch.  
+To use that feature, just set the env variable CONTAINERDIST in your shell session or invoke it direclty in the cmd:  
+`$ CONTAINERDIST="podman" ./vackup.sh`
 
 Note that for open files like databases,
 it's usually better to use their preferred backup tool to create a backup file,
