@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Docker/Container Volume File Backup and Restore Tool
 # Easily tar up a volume on a local (or remote) engine
 # Inspired by CLIP from Lukasz Lach
