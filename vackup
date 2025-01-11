@@ -81,12 +81,21 @@ error() {
 fulldirname() {
   DIRECTORY=$(dirname "$1")
 
-  case "$DIRECTORY" in
-    /*) ;;
-    .*) ;& # fallthrough
-    *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
-  esac
-  DIRECTORY=$(readlink -m "$DIRECTORY")
+  if ! [ "$(uname)" == "Darwin" ]; then
+    case "$DIRECTORY" in
+      /*) ;;
+      .*) ;& # fallthrough
+      *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
+    esac
+      DIRECTORY=$(readlink -m "$DIRECTORY")
+  else
+    case "$DIRECTORY" in
+      /*) ;;
+      .*) ;; # fallthrough
+      *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
+    esac      
+      DIRECTORY="$(pwd)/$DIRECTORY" 
+  fi
 
   echo "$DIRECTORY"
 }
@@ -220,6 +229,17 @@ cmd_load() {
 
     echo "Successfully copied /volume-data from $IMAGE_NAME into volume $VOLUME_NAME"
 }
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     machine=Linux;;
+    Darwin*)    machine=Mac;;
+    CYGWIN*)    machine=Cygwin;;
+    MINGW*)     machine=MinGw;;
+    MSYS_NT*)   machine=MSys;;
+    *)          machine="UNKNOWN:${unameOut}"
+esac
+
 
 COMMAND="$1"
 case "$COMMAND" in
