@@ -2,12 +2,12 @@
 
 [![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
 
-**This is now an [Official Docker Desktop Extension called "Volumes Backup & Share"](https://hub.docker.com/extensions/docker/volumes-backup-extension) which has more features, but I'll keep this repo around for historial purposes.**
+**This is now built into Docker Desktop's Dashboard UI ([Volumes Tab](https://docs.docker.com/desktop/use-desktop/volumes/)) which has more features, but I'll keep this tool around for those not using Docker Desktop.**
 
 Vackup: (contraction of "volume backup")
 
 Easily backup and restore Docker volumes using either tarballs or container images.
-It's designed for running from any host/container where you have the docker CLI.
+It's designed for running from any host/container where you have the Docker CLI.
 
 Note that for open files like databases,
 it's usually better to use their preferred backup tool to create a backup file,
@@ -24,16 +24,16 @@ For when you want to use image registries as a way to push/pull volume data.
 Usage:
 
 `vackup export VOLUME FILE`
-  Creates a gzip'ed tarball in current directory from a volume
+Creates a gzip'ed tarball in current directory from a volume
 
 `vackup import FILE VOLUME`
-  Extracts a gzip'ed tarball into a volume
+Extracts a gzip'ed tarball into a volume
 
 `vackup save VOLUME IMAGE`
-  Copies the volume contents to a busybox image in the /volume-data directory
+Copies the volume contents to a busybox image in the /volume-data directory
 
 `vackup load IMAGE VOLUME`
-  Copies /volume-data contents from an image to a volume
+Copies /volume-data contents from an image to a volume
 
 ## Install
 
@@ -46,8 +46,8 @@ sudo curl -sSL https://raw.githubusercontent.com/BretFisher/docker-vackup/main/v
 ## Error conditions
 
 If any of the commands fail, the script will check to see if a `VACKUP_FAILURE_SCRIPT`
-environment variable is set.  If so it will run it and pass the line number the error
-happened on and the exit code from the failed command.  Eg,
+environment variable is set. If so it will run it and pass the line number the error
+happened on and the exit code from the failed command. Eg,
 
 ```shell
 # /opt/bin/vackup-failed.sh

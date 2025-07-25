@@ -13,10 +13,10 @@ handle_error() {
   esac
 
   if [ -n "${VACKUP_FAILURE_SCRIPT}" ]; then
-    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$LINE_NUMBER" $EXIT_CODE
+    /bin/bash "${VACKUP_FAILURE_SCRIPT}" "$LINE_NUMBER" "$EXIT_CODE"
   fi
 
-  exit $EXIT_CODE
+  exit "$EXIT_CODE"
 }
 
 trap 'handle_error $LINENO' ERR
@@ -75,7 +75,7 @@ error() {
     fi
 
     LINE_NUMBER=$(caller | awk '{ print $1 }')
-    handle_error $LINE_NUMBER $CODE
+    handle_error "$LINE_NUMBER" "$CODE"
 }
 
 fulldirname() {
