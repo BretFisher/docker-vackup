@@ -1,14 +1,41 @@
 ---
+# template source: https://github.com/bretfisher/super-linter-workflow/blob/main/templates/call-super-linter.yaml
 name: Lint Code Base
 
 on:
+  # run anytime a PR is merged to main or a direct push to main
   push:
     branches: [main]
+
+  # run on any push to a PR branch
   pull_request:
-    branches: [main]
+
+# cancel any previously-started, yet still active runs of this workflow on the same branch
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # clone the repo to lint
+  statuses: write # read/write to repo custom statuses
 
 jobs:
   call-super-linter:
-    # use Reusable Workflows to call my linter config remotely
-    # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+    name: Call Super-Linter
+
+    ### use Reusable Workflows to call my workflow remotely
+    ### https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+    ### you can also call workflows from inside the same repo via file path
+
     uses: bretfisher/super-linter-workflow/.github/workflows/reusable-super-linter.yaml@main
+
+    ### Optional settings examples
+
+    # with:
+    ### For a DevOps-focused repository. Prevents some code-language linters from running
+    ### defaults to false
+    # devops-only: false
+
+    ### A regex to exclude files from linting
+    ### defaults to empty
+    # filter-regex-exclude: html/.*
