@@ -67,6 +67,7 @@ Vackup includes a comprehensive test suite using [Bats (Bash Automated Testing S
 ```
 
 ### Test Coverage
+
 - All four commands (`export`, `import`, `save`, `load`)
 - Error handling and edge cases
 - Cross-platform compatibility

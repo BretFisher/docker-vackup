@@ -3,7 +3,7 @@ name: Bash Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -16,20 +16,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   test:
     name: Run Bats Tests
     runs-on: ubuntu-latest
-            
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Install utils
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bats realpath coreutils
-        
-    - name: Run comprehensive tests
-      run: |
-        ./test/run-tests.sh -v
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install utils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats realpath coreutils
+
+      - name: Run comprehensive tests
+        run: |
+          ./test/run-tests.sh -v
