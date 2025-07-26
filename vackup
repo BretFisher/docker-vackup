@@ -123,7 +123,7 @@ cmd_export() {
       -v "$VOLUME_NAME":/volume-data \
       -v "$DIRECTORY":/mount-volume \
       busybox \
-      tar -cvzf /mount-volume/"$FILE_NAME" -C /volume-data .;
+      /bin/sh -c 'tar -cvzf /mount-volume/'"'$FILE_NAME'"' -C /volume-data . && chown '"'$(id -u):$(id -g)'"' /mount-volume/'"'$FILE_NAME'";
     then
         error 'Failed to start busybox backup container'
     fi
