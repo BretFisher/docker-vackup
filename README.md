@@ -1,7 +1,6 @@
 # Vackup: Backup and Restore Docker Volumes
 
 [![Lint Code Base](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/linter.yml)
-[![Test Vackup](https://github.com/BretFisher/docker-vackup/actions/workflows/test.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/test.yml)
 [![CI](https://github.com/BretFisher/docker-vackup/actions/workflows/ci.yml/badge.svg)](https://github.com/BretFisher/docker-vackup/actions/workflows/ci.yml)
 
 **This is now built into Docker Desktop's Dashboard UI ([Volumes Tab](https://docs.docker.com/desktop/use-desktop/volumes/)) which has more features, but I'll keep this tool around for those not using Docker Desktop.**
