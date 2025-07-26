@@ -44,12 +44,16 @@ cleanup_test_resources() {
     
     # Clean up test volumes
     docker volume ls -q | grep '^vackup_test_' | while read -r vol; do
-        [ -n "$vol" ] && docker volume rm "$vol" > /dev/null 2>&1 && echo "Removed volume: $vol" || true
+        if [ -n "$vol" ] && docker volume rm "$vol" > /dev/null 2>&1; then
+            echo "Removed volume: $vol"
+        fi
     done
     
     # Clean up test images
     docker image ls -q --filter "reference=vackup_test_*" | while read -r img; do
-        [ -n "$img" ] && docker image rm "$img" > /dev/null 2>&1 && echo "Removed image: $img" || true
+        if [ -n "$img" ] && docker image rm "$img" > /dev/null 2>&1; then
+            echo "Removed image: $img"
+        fi
     done
     
     echo -e "${GREEN}Cleanup completed.${NC}"
@@ -107,17 +111,21 @@ run_tests() {
     cd "$REPO_ROOT"
     
     if [ ${#bats_args[@]} -gt 0 ]; then
-        bats "${bats_args[@]}" test/vackup.bats
+        if bats "${bats_args[@]}" test/vackup.bats; then
+            echo -e "${GREEN}All tests passed!${NC}"
+            return 0
+        else
+            echo -e "${RED}Some tests failed.${NC}"
+            return 1
+        fi
     else
-        bats test/vackup.bats
-    fi
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}All tests passed!${NC}"
-        return 0
-    else
-        echo -e "${RED}Some tests failed.${NC}"
-        return 1
+        if bats test/vackup.bats; then
+            echo -e "${GREEN}All tests passed!${NC}"
+            return 0
+        else
+            echo -e "${RED}Some tests failed.${NC}"
+            return 1
+        fi
     fi
 }
 
