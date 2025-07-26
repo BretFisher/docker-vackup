@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test runner script for vackup
 # Usage: ./test/run-tests.sh [options]
 
