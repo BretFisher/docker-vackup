@@ -1,0 +1,34 @@
+---
+name: Bash Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# cancel any previously-started, yet still active runs of this workflow on the same branch
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run Bats Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install utils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats coreutils
+
+      - name: Run comprehensive tests
+        run: |
+          ./test/run-tests.sh -v
