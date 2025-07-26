@@ -99,6 +99,13 @@ fulldirname() {
   echo "$DIRECTORY"
 }
 
+is_digits() {
+    case "$1" in
+      *[!0-9]*) return 1 ;;
+      *) return 0 ;;
+    esac
+}
+
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
@@ -125,6 +132,22 @@ cmd_export() {
                 if [ -z "$OWNER" ]; then
                     error usage "'$OPTION' option requires a non-empty value"
                 fi
+
+                USER=$(echo "$OWNER" | cut -d':' -f1)
+                GROUP=$(echo "$OWNER" | cut -d':' -f2)
+
+                if [ -z "$USER" ]; then
+                    error usage "The UID in the '$OPTION' option can not be empty"
+                fi
+                if [ -z "$GROUP" ]; then
+                    GROUP="$USER"
+                fi
+
+                if ! is_digits "$USER" || ! is_digits "$GROUP"; then
+                    error usage "UID:GID in the '$OPTION' option may only contain digits"
+                fi
+
+                OWNER="$USER:$GROUP"
               ;;
               *) error usage "'$OPTION' is not a recognized export option" ;;
             esac
