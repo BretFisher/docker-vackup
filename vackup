@@ -24,27 +24,27 @@ trap 'handle_error $LINENO' ERR
 usage() {
 cat <<EOF
 
-"Docker Volume Backup". Replicates image management commands for volumes.
+"Docker Volume Backup". Replicates container image management commands for container volumes.
 
-export/import copies files between a host tarball and a volume. For making
-  volume backups and restores.
+export/import copies files between a host tarball and a volume.
+  For making volume backups and restores on your local file system.
 
-save/load copies files between an image and a volume. For when you want to use
-  image registries as a way to push/pull volume data.
+save/load copies files between a container image and a container volume.
+  For storing container volumes in images and push/pulling to registries.
 
 Usage:
 
 vackup export VOLUME FILE
-  Creates a gzip'ed tarball in current directory from a volume
+  Creates a gzip'ed tarball in current directory from a container volume
 
 vackup import FILE VOLUME
-  Extracts a gzip'ed tarball into a volume
+  Extracts a gzip'ed tarball into a container volume
 
 vackup save VOLUME IMAGE
-  Copies the volume contents to a busybox image in the /volume-data directory
+  Copies a container volume to a busybox container image in the /volume-data directory
 
 vackup load IMAGE VOLUME
-  Copies /volume-data contents from an image to a volume
+  Copies /volume-data from a container image to a container volume
 
 EOF
 }
@@ -85,7 +85,13 @@ fulldirname() {
     /*) ;;
     *) DIRECTORY="$(pwd)/$DIRECTORY" ;;
   esac
-  DIRECTORY=$(readlink -m "$DIRECTORY")
+
+  # Use realpath if available, else fallback to cd/pwd for macOS compatibility
+  if command -v realpath >/dev/null 2>&1; then
+    DIRECTORY=$(realpath "$DIRECTORY")
+  else
+    DIRECTORY=$(cd "$DIRECTORY" && pwd)
+  fi
 
   echo "$DIRECTORY"
 }
@@ -108,17 +114,16 @@ cmd_export() {
         error "Volume $VOLUME_NAME does not exist"
     fi
 
-# TODO: check if file exists on host, if it does
-# create a option for overwrite and check if that's set
+# TODO: check if file exists on host, if it does, create overwrite option and check if set
 
     DIRECTORY=$(fulldirname "$FILE_NAME")
     FILE_NAME=$(basename "$FILE_NAME")
 
     if ! docker run --rm \
-      -v "$VOLUME_NAME":/vackup-volume \
-      -v "$DIRECTORY":/vackup \
+      -v "$VOLUME_NAME":/volume-data \
+      -v "$DIRECTORY":/mount-volume \
       busybox \
-      tar -zcvf /vackup/"$FILE_NAME" /vackup-volume;
+      tar -cvzf /mount-volume/"$FILE_NAME" -C /volume-data .;
     then
         error 'Failed to start busybox backup container'
     fi
@@ -154,10 +159,10 @@ cmd_import() {
     FILE_NAME=$(basename "$FILE_NAME")
 
     if ! docker run --rm \
-      -v "$VOLUME_NAME":/vackup-volume \
-      -v "$DIRECTORY":/vackup \
+      -v "$VOLUME_NAME":/volume-data \
+      -v "$DIRECTORY":/mount-volume \
       busybox \
-      tar -xvzf /vackup/"$FILE_NAME" -C /;
+      tar -xvzf /mount-volume/"$FILE_NAME" -C /volume-data;
     then
         error 'Failed to start busybox container'
     fi
@@ -179,6 +184,7 @@ cmd_save() {
     fi
 
     if ! docker run \
+      --pull missing \
       -v "$VOLUME_NAME":/mount-volume \
       busybox \
       cp -Rp /mount-volume/. /volume-data/;
@@ -186,9 +192,11 @@ cmd_save() {
         error 'Failed to start busybox container'
     fi
 
+    # FIXME: this command assumes that no containers started between the cp and container rm commands. 
+    #   It would be safer to capture ID of the busybox container on start, then delete that ID 
     CONTAINER_ID=$(docker ps -lq)
 
-    docker commit -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
+    docker commit -c "LABEL com.docker.desktop.volume-contents.action=true" -m "saving volume $VOLUME_NAME to /volume-data" "$CONTAINER_ID" "$IMAGE_NAME"
 
     docker container rm "$CONTAINER_ID"
 
@@ -209,6 +217,7 @@ cmd_load() {
       docker volume create "$VOLUME_NAME"
     fi
 
+    # FIXME: this command assumes the image we're copying from has the cp command available
     if ! docker run --rm \
       -v "$VOLUME_NAME":/mount-volume \
       "$IMAGE_NAME" \
