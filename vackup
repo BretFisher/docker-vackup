@@ -34,8 +34,11 @@ save/load copies files between a container image and a container volume.
 
 Usage:
 
-vackup export VOLUME FILE
+vackup export [OPTIONS] VOLUME FILE
   Creates a gzip'ed tarball in current directory from a container volume
+
+  Options:
+    --owner=UID[:GID]       Change the ownership of the exported archive on Linux (won't have any effect on macOS)
 
 vackup import FILE VOLUME
   Extracts a gzip'ed tarball into a container volume
@@ -102,6 +105,34 @@ if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 fi
 
 cmd_export() {
+    OWNER=''
+
+    while [ $# -ne 0 ]; do
+        case "$1" in
+          -*)
+            OPTION="$1"
+            shift
+
+            case "$OPTION" in
+              --owner) error usage "'$OPTION' option requires a value" ;;
+              --owner=*)
+                if [ -n "$OWNER" ]; then
+                    error usage "'--owner' option may only be used once"
+                fi
+
+                OWNER=${OPTION#--owner=}
+
+                if [ -z "$OWNER" ]; then
+                    error usage "'$OPTION' option requires a non-empty value"
+                fi
+              ;;
+              *) error usage "'$OPTION' is not a recognized export option" ;;
+            esac
+          ;;
+          *) break ;;
+        esac
+    done
+
     VOLUME_NAME="$1"
     FILE_NAME="$2"
 
@@ -123,7 +154,7 @@ cmd_export() {
       -v "$VOLUME_NAME":/volume-data \
       -v "$DIRECTORY":/mount-volume \
       busybox \
-      /bin/sh -c 'tar -cvzf /mount-volume/'"'$FILE_NAME'"' -C /volume-data . && chown '"'$(id -u):$(id -g)'"' /mount-volume/'"'$FILE_NAME'";
+      /bin/sh -c 'tar -cvzf /mount-volume/'"'$FILE_NAME'"' -C /volume-data . && chown '"'${OWNER:-"$(id -u):$(id -g)"}'"' /mount-volume/'"'$FILE_NAME'";
     then
         error 'Failed to start busybox backup container'
     fi
