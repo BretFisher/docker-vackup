@@ -17,12 +17,16 @@ setup() {
 teardown() {
   # Clean up volumes with our test prefix (more targeted cleanup)
   docker volume ls -q --filter "name=${TEST_PREFIX}" | while read -r vol; do
-    [ -n "$vol" ] && docker volume rm "$vol" > /dev/null 2>&1 || true
+    if [ -n "$vol" ] && docker volume rm "$vol" > /dev/null 2>&1; then
+      : # Volume removed successfully
+    fi
   done
   
   # Clean up images with our test prefix  
   docker image ls -q --filter "reference=${TEST_PREFIX}*" | while read -r img; do
-    [ -n "$img" ] && docker image rm "$img" > /dev/null 2>&1 || true
+    if [ -n "$img" ] && docker image rm "$img" > /dev/null 2>&1; then
+      : # Image removed successfully
+    fi
   done
   
   # Clean up test files and directories recursively

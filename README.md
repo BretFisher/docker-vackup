@@ -47,7 +47,8 @@ sudo curl -sSL https://raw.githubusercontent.com/BretFisher/docker-vackup/main/v
 
 ## Testing
 
-Vackup includes a comprehensive test suite using [Bats (Bash Automated Testing System)](https://github.com/bats-core/bats-core) that ensures compatibility across macOS, Linux, and Windows WSL.
+Vackup includes a comprehensive test suite using [Bats (Bash Automated Testing System)](https://github.com/bats-core/bats-core) 
+that ensures compatibility across macOS, Linux, and Windows WSL.
 
 ### Run Tests Locally
 

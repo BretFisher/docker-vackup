@@ -4,7 +4,8 @@ This directory contains comprehensive tests for the `vackup` Docker volume backu
 
 ## Overview
 
-The test suite uses [Bats (Bash Automated Testing System)](https://github.com/bats-core/bats-core) to provide thorough testing of all `vackup` functionality across different platforms including macOS, Linux, and Windows WSL.
+The test suite uses [Bats (Bash Automated Testing System)](https://github.com/bats-core/bats-core) to provide 
+thorough testing of all `vackup` functionality across different platforms including macOS, Linux, and Windows WSL.
 
 ## Test Coverage
 
