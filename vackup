@@ -34,8 +34,11 @@ save/load copies files between a container image and a container volume.
 
 Usage:
 
-vackup export VOLUME FILE
+vackup export [OPTIONS] VOLUME FILE
   Creates a gzip'ed tarball in current directory from a container volume
+
+  Options:
+    --owner=UID[:GID]       Change the ownership of the exported archive on Linux (won't have any effect on macOS)
 
 vackup import FILE VOLUME
   Extracts a gzip'ed tarball into a container volume
@@ -96,14 +99,65 @@ fulldirname() {
   echo "$DIRECTORY"
 }
 
+is_digits() {
+    case "$1" in
+      *[!0-9]*) return 1 ;;
+      *) return 0 ;;
+    esac
+}
+
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
     exit 0
 fi
 
 cmd_export() {
-    VOLUME_NAME="$2"
-    FILE_NAME="$3"
+    OWNER=''
+
+    while [ $# -ne 0 ]; do
+        case "$1" in
+          -*)
+            OPTION="$1"
+            shift
+
+            case "$OPTION" in
+              --owner) error usage "'$OPTION' option requires a value" ;;
+              --owner=*)
+                if [ -n "$OWNER" ]; then
+                    error usage "'--owner' option may only be used once"
+                fi
+
+                OWNER=${OPTION#--owner=}
+
+                if [ -z "$OWNER" ]; then
+                    error usage "'$OPTION' option requires a non-empty value"
+                fi
+
+                USER=$(echo "$OWNER" | cut -d':' -f1)
+                GROUP=$(echo "$OWNER" | cut -d':' -f2)
+
+                if [ -z "$USER" ]; then
+                    error usage "The UID in the '$OPTION' option can not be empty"
+                fi
+                if [ -z "$GROUP" ]; then
+                    GROUP="$USER"
+                fi
+
+                if ! is_digits "$USER" || ! is_digits "$GROUP"; then
+                    error usage "UID:GID in the '$OPTION' option may only contain digits"
+                fi
+
+                OWNER="$USER:$GROUP"
+              ;;
+              *) error usage "'$OPTION' is not a recognized export option" ;;
+            esac
+          ;;
+          *) break ;;
+        esac
+    done
+
+    VOLUME_NAME="$1"
+    FILE_NAME="$2"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         error usage 'Not enough arguments'
@@ -123,7 +177,7 @@ cmd_export() {
       -v "$VOLUME_NAME":/volume-data \
       -v "$DIRECTORY":/mount-volume \
       busybox \
-      tar -cvzf /mount-volume/"$FILE_NAME" -C /volume-data .;
+      /bin/sh -c 'tar -cvzf /mount-volume/'"'$FILE_NAME'"' -C /volume-data . && chown '"'${OWNER:-"$(id -u):$(id -g)"}'"' /mount-volume/'"'$FILE_NAME'";
     then
         error 'Failed to start busybox backup container'
     fi
@@ -132,8 +186,8 @@ cmd_export() {
 }
 
 cmd_import() {
-    FILE_NAME="$2"
-    VOLUME_NAME="$3"
+    FILE_NAME="$1"
+    VOLUME_NAME="$2"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$FILE_NAME" ]; then
         error usage 'Not enough arguments'
@@ -171,8 +225,8 @@ cmd_import() {
 }
 
 cmd_save() {
-    VOLUME_NAME="$2"
-    IMAGE_NAME="$3"
+    VOLUME_NAME="$1"
+    IMAGE_NAME="$2"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         error usage 'Not enough arguments'
@@ -204,8 +258,8 @@ cmd_save() {
 }
 
 cmd_load() {
-    IMAGE_NAME="$2"
-    VOLUME_NAME="$3"
+    IMAGE_NAME="$1"
+    VOLUME_NAME="$2"
 
     if [ -z "$VOLUME_NAME" ] || [ -z "$IMAGE_NAME" ]; then
         error usage 'Not enough arguments'
@@ -230,6 +284,7 @@ cmd_load() {
 }
 
 COMMAND="$1"
+shift
 case "$COMMAND" in
   export) cmd_export "$@" ;;
   import) cmd_import "$@" ;;

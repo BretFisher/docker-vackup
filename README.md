@@ -13,7 +13,7 @@ It's designed for running from any host/container where you have the Docker CLI.
 Note that for open files like databases,
 it's usually better to use their preferred backup tool to create a backup file,
 but if you stored that file on a Docker volume,
-this could still be a way you get the Docker volume into a image or tarball
+this could still be a way you get the Docker volume into an image or tarball
 for moving to remote storage for safe keeping.
 
 `export`/`import` commands copy files between a local tarball and a volume.
@@ -24,8 +24,11 @@ For when you want to use image registries as a way to push/pull volume data.
 
 Usage:
 
-`vackup export VOLUME FILE`
+`vackup export [OPTIONS] VOLUME FILE`
 Creates a gzip'ed tarball in current directory from a volume
+
+- `--owner=UID[:GID]`
+  Change the ownership of the exported archive on Linux (won't have any effect on macOS)
 
 `vackup import FILE VOLUME`
 Extracts a gzip'ed tarball into a volume
