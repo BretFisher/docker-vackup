@@ -1,0 +1,10 @@
+# TODO: why does this file exist
+
+
+services:
+
+  vackup:
+    image: bretfisher/vackup:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+

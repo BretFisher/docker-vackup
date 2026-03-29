@@ -1,0 +1,21 @@
+# TODO: example of running a Postgres backup and then storing that in an image
+
+
+services:
+
+  psql:
+    image: postgres:latest
+
+  psql-backup:
+    image: postgres:latest
+    # don't start until the psql healthcheck passes
+
+
+  vackup:
+    image: bretfisher/vackup:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # don't start until psql-backup is finished (stopped)
+    depends_on:
+      
+
