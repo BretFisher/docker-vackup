@@ -174,10 +174,12 @@ cmd_export() {
     FILE_NAME=$(basename "$FILE_NAME")
 
     if ! docker run --rm \
+      -e FILE_NAME="$FILE_NAME" \
+      -e OWNER="${OWNER:-"$(id -u):$(id -g)"}" \
       -v "$VOLUME_NAME":/volume-data \
       -v "$DIRECTORY":/mount-volume \
       busybox \
-      /bin/sh -c 'tar -cvzf /mount-volume/'"'$FILE_NAME'"' -C /volume-data . && (chown '"'${OWNER:-"$(id -u):$(id -g)"}'"' /mount-volume/'"'$FILE_NAME'"' || echo 1>&2 "Warning: Failed to change ownership of the '"$FILE_NAME"' file")';
+      /bin/sh -c 'tar -cvzf /mount-volume/"$FILE_NAME" -C /volume-data . && (chown "$OWNER" /mount-volume/"$FILE_NAME" || echo 1>&2 "Warning: Failed to change ownership of the $FILE_NAME file")';
     then
         error 'Failed to start busybox backup container'
     fi
