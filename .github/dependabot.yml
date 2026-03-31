@@ -1,8 +1,31 @@
 ---
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
 version: 2
 updates:
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    cooldown:
+      default-days: 7
     schedule:
-      interval: "monthly"
+      interval: "daily"
+
+  # Add this section for each directory with a Dockerfile, K8s manifest, or Helm chart
+  # They must use a semver tag, and Dependabot must be able to access the registry
+  # You can give it access to private ones:
+  # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#configuration-options-for-private-registries
+  # follow along on a feature request to support multiple directories in one package-ecosystem
+  # https://github.com/dependabot/dependabot-core/issues/2178
+  - package-ecosystem: "docker"
+    directory: "/"
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: "weekly"
+    commit-message:
+      # Prefix all commit messages with "[docker] "
+      prefix: "[docker] "
